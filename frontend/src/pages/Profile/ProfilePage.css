@@ -1,0 +1,344 @@
+/* ========== TOAST NOTIFICATION ========== */
+.profile-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  animation: slideInToast 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.profile-toast.success {
+  background: #222;
+}
+
+.profile-toast.error {
+  background: #c0392b;
+}
+
+.profile-toast i {
+  font-size: 18px;
+}
+
+@keyframes slideInToast {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ========== LOADING ========== */
+.profile-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  font-size: 16px;
+  color: #888;
+}
+
+/* ========== CONTAINER ========== */
+.profile-container {
+  max-width: 1100px;
+  margin: 100px auto 60px;
+  padding: 0 20px;
+}
+
+.profile-page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 30px;
+}
+
+.profile-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+/* ========== PROFILE CARD (LEFT) ========== */
+.profile-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border: 3px solid #222;
+}
+
+.profile-avatar i {
+  font-size: 44px;
+  color: #555;
+}
+
+.profile-avatar-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+}
+
+/* --- Info View --- */
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-row-inline {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  word-break: break-word;
+}
+
+.btn-edit-profile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  background: #fff;
+  color: #222;
+  border: 2px solid #222;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-edit-profile:hover {
+  background: #222;
+  color: #fff;
+}
+
+/* --- Edit Form --- */
+.profile-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-edit-form .form-group,
+.password-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-edit-form label,
+.password-form label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+}
+
+.profile-edit-form input,
+.password-form input {
+  padding: 11px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  background: #fafafa;
+  transition: border-color 0.2s;
+}
+
+.profile-edit-form input:focus,
+.password-form input:focus {
+  outline: none;
+  border-color: #222;
+  background: #fff;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: #999;
+}
+
+.form-error {
+  color: #c0392b;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.btn-save,
+.btn-confirm-pass {
+  padding: 12px;
+  background: #222;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-save:hover,
+.btn-confirm-pass:hover {
+  background: #444;
+}
+
+.btn-cancel,
+.btn-cancel-pass {
+  padding: 12px;
+  background: #fff;
+  color: #555;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.btn-cancel:hover,
+.btn-cancel-pass:hover {
+  background: #f5f5f5;
+  color: #222;
+}
+
+/* ========== PASSWORD CARD (RIGHT) ========== */
+.password-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.password-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.password-title i {
+  font-size: 20px;
+}
+
+.password-placeholder {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.password-placeholder p {
+  font-size: 14px;
+  color: #777;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.btn-show-pass-form {
+  padding: 12px 32px;
+  background: #fff;
+  color: #222;
+  border: 2px solid #222;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-show-pass-form:hover {
+  background: #222;
+  color: #fff;
+}
+
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .profile-content {
+    grid-template-columns: 1fr;
+  }
+
+  .info-row-inline {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-container {
+    margin-top: 80px;
+  }
+}

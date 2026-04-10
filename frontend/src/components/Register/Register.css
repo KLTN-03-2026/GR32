@@ -1,0 +1,137 @@
+.register-wrapper {
+  position: relative;
+  min-height: 100vh;
+  background-color: #fcfcfc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 50px 0; /* Thêm padding để không bị mất chân trang khi màn hình nhỏ */
+}
+
+/* Header NO NAME đồng bộ với Login */
+.no-name-header {
+  position: absolute;
+  top: 40px;
+  left: 60px;
+  font-size: 24px;
+}
+.no-name-header span {
+  font-size: 16px;
+  color: #555;
+  margin-left: 10px;
+}
+
+/* Card Đăng ký */
+.register-card {
+  background: white;
+  padding: 40px;
+  border-radius: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  width: 450px;
+  text-align: center;
+}
+
+.register-card h2 {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.note-text {
+  display: block;
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 25px;
+}
+
+.input-group {
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.input-group input,
+.input-group select {
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 30px; /* Capsule shape */
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+  background-color: #fff;
+}
+
+.input-group input:focus {
+  border-color: #333;
+}
+
+/* Nút Đăng ký bo tròn */
+.btn-register-submit {
+  margin-top: 10px;
+  width: 180px;
+  padding: 10px;
+  border: 1.5px solid #333;
+  background: white;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-register-submit:hover {
+  background: #333;
+  color: white;
+}
+
+.register-footer {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.login-link {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.error-text {
+  color: #ff0000;
+  margin-top: 15px;
+  font-size: 13px;
+}
+.success-text {
+  color: #28a745;
+  margin-top: 15px;
+  font-size: 13px;
+}
+/* Khung chứa tiêu đề và nút Back */
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-bottom: 25px;
+}
+
+/* Nút mũi tên quay lại */
+.back-home-btn {
+  position: absolute;
+  left: 0;
+  text-decoration: none;
+  color: #333;
+  font-size: 26px;
+  font-weight: bold;
+  transition: 0.3s;
+  line-height: 1;
+}
+
+.back-home-btn:hover {
+  color: #ff4d4d;
+  transform: translateX(-5px); /* Nhích nhẹ sang trái khi rê chuột */
+}
+
+/* Căn giữa chữ Đăng ký */
+.card-header-actions h2 {
+  flex-grow: 1;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}

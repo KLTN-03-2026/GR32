@@ -1,0 +1,358 @@
+.category-page {
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* ==================== BREADCRUMB ==================== */
+.breadcrumb {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 15px 20px;
+  font-size: 13px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.breadcrumb a {
+  color: #666;
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+.breadcrumb a:hover {
+  color: #222;
+}
+
+.breadcrumb-current {
+  color: #333;
+  font-weight: 600;
+}
+
+/* ==================== LAYOUT ==================== */
+.category-layout {
+  display: flex;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px 30px;
+  gap: 20px;
+}
+
+/* ==================== SIDEBAR ==================== */
+.cat-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  height: fit-content;
+  position: sticky;
+  top: 80px;
+}
+
+.cat-sidebar h3 {
+  font-size: 14px;
+  font-weight: 700;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 15px;
+}
+
+.cat-filter-group {
+  margin-bottom: 20px;
+}
+
+.cat-filter-title {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.cat-filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  color: #555;
+}
+
+.cat-filter-checkbox input {
+  accent-color: #222;
+  width: 15px;
+  height: 15px;
+}
+
+/* ==================== MAIN ==================== */
+.cat-main {
+  flex: 1;
+}
+
+.cat-header {
+  margin-bottom: 15px;
+}
+
+.cat-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.cat-header p {
+  font-size: 14px;
+  color: #888;
+}
+
+/* ==================== SORT BAR ==================== */
+.cat-sort-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ededed;
+  padding: 10px 20px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.cat-sort-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.cat-sort-left span {
+  font-weight: 600;
+}
+
+.cat-sort-left button {
+  border: none;
+  background: #fff;
+  padding: 7px 18px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.cat-sort-left button.active {
+  background: #222;
+  color: #fff;
+}
+
+.cat-sort-left select {
+  padding: 7px 12px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+}
+
+.cat-pagination-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.cat-pagination-top button {
+  border: 1px solid #ddd;
+  background: #fff;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.cat-pagination-top button:hover:not(:disabled) {
+  background: #222;
+  color: #fff;
+}
+
+.cat-pagination-top button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==================== GRID ==================== */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.cat-card {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: 0.2s;
+  overflow: hidden;
+}
+
+.cat-card:hover {
+  border-color: #222;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.cat-card-img {
+  position: relative;
+  overflow: hidden;
+}
+
+.cat-card-img img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+}
+
+.cat-sale-tag {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #222;
+  color: #fff;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.cat-card-info {
+  padding: 10px 12px;
+}
+
+.cat-card-info h4 {
+  font-size: 13px;
+  font-weight: 400;
+  height: 36px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  margin-bottom: 6px;
+}
+
+.cat-card-price {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cat-current {
+  color: #c0392b;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.cat-original {
+  color: #999;
+  font-size: 12px;
+}
+
+.cat-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cat-rating {
+  font-size: 11px;
+  color: #ffc107;
+}
+
+.cat-rating span {
+  color: #999;
+  margin-left: 4px;
+}
+
+.cat-add-cart {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 12px;
+  transition: 0.2s;
+}
+
+.cat-add-cart:hover {
+  background: #222;
+  color: #fff;
+  border-color: #222;
+}
+
+/* ==================== EMPTY & NOT FOUND ==================== */
+.cat-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 0;
+  color: #999;
+}
+
+.cat-empty i {
+  font-size: 48px;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.category-not-found {
+  text-align: center;
+  padding: 80px 0;
+}
+
+.category-not-found h2 {
+  margin-bottom: 15px;
+}
+
+.category-not-found a {
+  color: #222;
+  font-weight: 600;
+}
+
+/* ==================== PAGINATION BOTTOM ==================== */
+.cat-pagination-bottom {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 30px 0;
+}
+
+.cat-pagination-bottom button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.cat-pagination-bottom button.active {
+  background: #222;
+  color: #fff;
+  border-color: #222;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 1200px) {
+  .cat-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 992px) {
+  .cat-grid { grid-template-columns: repeat(3, 1fr); }
+  .cat-sidebar { width: 180px; }
+}
+@media (max-width: 768px) {
+  .category-layout { flex-direction: column; }
+  .cat-sidebar { width: 100%; position: static; }
+  .cat-grid { grid-template-columns: repeat(2, 1fr); }
+}

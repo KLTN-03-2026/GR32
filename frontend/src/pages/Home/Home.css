@@ -1,0 +1,392 @@
+.home-page {
+  background: #fff;
+}
+
+.main-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ==================== BANNER ==================== */
+.banner-section {
+  margin-bottom: 30px;
+}
+
+.banner-slide {
+  background: linear-gradient(135deg, #333, #111, #444);
+  border-radius: 12px;
+  padding: 60px 40px;
+  text-align: center;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-content h1 {
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  margin-bottom: 5px;
+}
+
+.banner-content h1 span {
+  color: #fff;
+  opacity: 0.9;
+}
+
+.banner-subtitle {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.banner-subtitle strong {
+  font-size: 36px;
+  color: #fff;
+}
+
+.banner-btn {
+  padding: 12px 40px;
+  background: #fff;
+  color: #222;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.banner-btn:hover {
+  background: #ddd;
+  color: #222;
+}
+
+/* ==================== SECTION TITLE ==================== */
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 30px 0 20px;
+  padding-left: 12px;
+  border-left: 4px solid #000;
+}
+
+/* ==================== VOUCHERS ==================== */
+.voucher-section {
+  margin-bottom: 20px;
+}
+
+.voucher-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+.voucher-card {
+  display: flex;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  transition: 0.3s;
+}
+
+.voucher-card:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.voucher-left {
+  background: #222;
+  color: #fff;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 70px;
+}
+
+.voucher-code {
+  font-weight: bold;
+  font-size: 13px;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  letter-spacing: 1px;
+}
+
+.voucher-right {
+  padding: 12px 15px;
+  flex: 1;
+}
+
+.voucher-amount {
+  font-weight: bold;
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 3px;
+}
+
+.voucher-condition {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.voucher-meta {
+  font-size: 11px;
+  color: #999;
+}
+
+/* ==================== PRODUCT TABS ==================== */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.product-tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.tab {
+  padding: 8px 20px;
+  border: 1.5px solid #ddd;
+  background: #fff;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.tab.active,
+.tab:hover {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+/* ==================== PRODUCT GRID ==================== */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.no-products {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #999;
+  padding: 40px 0;
+}
+
+.product-card {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: 0.3s;
+  background: #fff;
+}
+
+.product-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+}
+
+.product-img {
+  position: relative;
+  overflow: hidden;
+}
+
+.product-img img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  display: block;
+  transition: 0.3s;
+}
+
+.product-card:hover .product-img img {
+  transform: scale(1.05);
+}
+
+.discount-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #222;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.product-info {
+  padding: 15px;
+  position: relative;
+}
+
+.product-name {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  height: 40px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  color: #333;
+}
+
+.product-price {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.current-price {
+  font-weight: bold;
+  font-size: 15px;
+  color: #c0392b;
+}
+
+.original-price {
+  color: #999;
+  font-size: 13px;
+}
+
+.product-rating {
+  font-size: 12px;
+  color: #ffc107;
+  margin-bottom: 5px;
+}
+
+.rating-count {
+  color: #999;
+  margin-left: 5px;
+  font-size: 11px;
+}
+
+.add-to-cart {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  width: 35px;
+  height: 35px;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.3s;
+  color: #555;
+}
+
+.add-to-cart:hover {
+  background: #222;
+  color: #fff;
+  border-color: #222;
+}
+
+/* ==================== VIEW ALL BUTTON ==================== */
+.view-all-btn {
+  display: block;
+  margin: 30px auto;
+  padding: 10px 40px;
+  border-radius: 25px;
+  border: 1.5px solid #333;
+  background: #fff;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.view-all-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+/* ==================== CHATBOT BUTTON ==================== */
+.chatbot-fixed-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: #333;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+  transition: 0.3s;
+}
+
+.chatbot-fixed-btn:hover {
+  background: #555;
+}
+
+/* ==================== SCROLL TO TOP ==================== */
+.scroll-top-btn {
+  position: fixed;
+  bottom: 90px;
+  right: 35px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  transition: 0.3s;
+  color: #333;
+}
+
+.scroll-top-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 992px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .voucher-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .banner-content h1 {
+    font-size: 32px;
+  }
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .voucher-grid {
+    grid-template-columns: 1fr;
+  }
+}

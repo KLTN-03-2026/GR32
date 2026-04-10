@@ -1,0 +1,176 @@
+.login-wrapper {
+  position: relative;
+  min-height: 100vh;
+  background-color: #fcfcfc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Header NO NAME góc trên trái */
+.no-name-header {
+  position: absolute;
+  top: 40px;
+  left: 60px;
+  font-size: 24px;
+}
+.no-name-header span {
+  font-size: 16px;
+  color: #555;
+  margin-left: 10px;
+}
+
+/* Card Đăng nhập */
+.login-card {
+  background: white;
+  padding: 50px 40px;
+  border-radius: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  width: 420px;
+  text-align: center;
+}
+
+.login-card h2 {
+  margin-bottom: 30px;
+  font-weight: 600;
+}
+
+.input-group {
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 30px; /* Bo tròn capsule */
+  font-size: 15px;
+  box-sizing: border-box;
+  outline: none;
+  transition: 0.3s;
+}
+
+.input-group input:focus {
+  border-color: #333;
+}
+
+/* Xử lý con mắt chui vào trong input */
+.password-group {
+  position: relative;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #666;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+}
+
+/* Nút Đăng nhập bo tròn */
+.btn-login-submit {
+  margin-top: 15px;
+  width: 180px;
+  padding: 10px;
+  border: 1.5px solid #333;
+  background: white;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-login-submit:hover {
+  background: #333;
+  color: white;
+}
+
+/* Link footer */
+.login-links {
+  margin-top: 20px;
+  font-size: 13px;
+}
+
+.login-links a {
+  text-decoration: none;
+  color: #007bff;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.login-links p {
+  color: #333;
+  margin-top: 10px;
+}
+
+.reg-link {
+  color: #ff0000 !important;
+  display: inline !important;
+  font-weight: bold;
+}
+
+.error-text {
+  color: #ff0000;
+  margin-top: 15px;
+  font-size: 13px;
+}
+
+.success-text {
+  color: #28a745;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.resend-section {
+  margin-top: 15px;
+}
+
+.btn-resend {
+  padding: 8px 20px;
+  border: 1.5px solid #007bff;
+  background: white;
+  color: #007bff;
+  border-radius: 25px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-resend:hover {
+  background: #007bff;
+  color: white;
+}
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.back-home-btn {
+  position: absolute;
+  left: 0;
+  text-decoration: none;
+  color: #333;
+  font-size: 28px;
+  font-weight: bold;
+  transition: 0.3s;
+  padding: 0 10px;
+}
+
+.back-home-btn:hover {
+  color: #ff4d4d;
+  transform: translateX(-5px);
+}
+
+.card-header-actions h2 {
+  flex-grow: 1;
+  margin: 0;
+  font-size: 22px;
+}

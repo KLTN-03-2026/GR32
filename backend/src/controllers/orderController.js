@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Cart = require("../models/Cart");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
@@ -315,14 +316,78 @@ exports.vnpayReturn = async (req, res) => {
   }
 };
 
+const ORDER_STATUS_LIST = ["cho_xu_ly", "dang_giao", "hoan_thanh", "huy"];
+
 exports.myOrders = async (req, res) => {
   try {
-    const list = await Order.find({ nguoi_dung_id: req.user._id })
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .lean();
-    res.json(list);
+    const userId = req.user._id;
+    const q = (req.query.q || "").trim();
+    const status = (req.query.trang_thai_don || "").trim();
+    const sortField = (req.query.sort || "createdAt").trim();
+    const sortDir = String(req.query.order || "desc").toLowerCase() === "asc" ? 1 : -1;
+
+    const filter = { nguoi_dung_id: userId };
+    if (status && ORDER_STATUS_LIST.includes(status)) {
+      filter.trang_thai_don = status;
+    }
+    if (q) {
+      const esc = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.ma_don = new RegExp(esc, "i");
+    }
+
+    const minTong = req.query.tong_min;
+    const maxTong = req.query.tong_max;
+    if (minTong !== undefined && minTong !== "" && !Number.isNaN(Number(minTong))) {
+      filter.tong_cong = { ...(filter.tong_cong || {}), $gte: Number(minTong) };
+    }
+    if (maxTong !== undefined && maxTong !== "" && !Number.isNaN(Number(maxTong))) {
+      filter.tong_cong = { ...(filter.tong_cong || {}), $lte: Number(maxTong) };
+    }
+
+    let sort = { createdAt: -1 };
+    if (sortField === "ma_don") sort = { ma_don: sortDir };
+    else if (sortField === "tong_cong") sort = { tong_cong: sortDir };
+    else if (sortField === "trang_thai_don") sort = { trang_thai_don: sortDir };
+    else if (sortField === "createdAt") sort = { createdAt: sortDir };
+
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      Order.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+      Order.countDocuments(filter),
+    ]);
+
+    res.json({
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1,
+    });
   } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi server!" });
+  }
+};
+
+exports.myOrderById = async (req, res) => {
+  try {
+    const id = req.params.orderId;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID đơn hàng không hợp lệ." });
+    }
+    const order = await Order.findOne({
+      _id: id,
+      nguoi_dung_id: req.user._id,
+    }).lean();
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng." });
+    }
+    res.json(order);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Lỗi server!" });
   }
 };

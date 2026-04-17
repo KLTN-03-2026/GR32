@@ -1,0 +1,228 @@
+.my-orders-page {
+  min-height: 60vh;
+  padding: 100px 20px 60px;
+  background: #f5f5f5;
+}
+
+.my-orders-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.my-orders-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #111;
+  margin: 0 0 24px;
+  letter-spacing: -0.02em;
+}
+
+.my-orders-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.my-orders-select {
+  min-width: 180px;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.my-orders-search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.my-orders-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.my-orders-range-label {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+}
+
+.my-orders-num {
+  width: 110px;
+  padding: 10px 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.my-orders-range-dash {
+  color: #999;
+}
+
+.my-orders-error {
+  color: #c0392b;
+  margin-bottom: 12px;
+}
+
+.my-orders-loading,
+.my-orders-empty {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  color: #666;
+}
+
+.my-orders-link-shop {
+  display: inline-block;
+  margin-top: 16px;
+  font-weight: 600;
+  color: #111;
+  text-decoration: underline;
+}
+
+.my-orders-table-wrap {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow-x: auto;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.my-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.my-orders-table th,
+.my-orders-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.my-orders-table th {
+  background: #fafafa;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+}
+
+.my-orders-th-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.my-orders-th-btn:hover {
+  color: #000;
+}
+
+.sort-mark {
+  font-size: 12px;
+  color: #888;
+}
+
+.ma-don {
+  font-weight: 700;
+  color: #111;
+}
+
+.td-money {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.td-address {
+  max-width: 260px;
+  color: #555;
+  line-height: 1.45;
+}
+
+.order-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.order-status-pill.st-cho_xu_ly {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.order-status-pill.st-dang_giao {
+  background: #e3f2fd;
+  color: #0d47a1;
+}
+
+.order-status-pill.st-hoan_thanh {
+  background: #f3e5f5;
+  color: #4a148c;
+}
+
+.order-status-pill.st-huy {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.my-orders-detail-link {
+  color: #111;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.my-orders-detail-link:hover {
+  color: #444;
+}
+
+.my-orders-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.my-orders-pager button {
+  padding: 8px 18px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.my-orders-pager button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .my-orders-table .td-address {
+    max-width: 160px;
+  }
+}

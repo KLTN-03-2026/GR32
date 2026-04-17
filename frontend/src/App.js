@@ -25,6 +25,8 @@ import Home from "./pages/Home/Home";
 import ProductDetail from "./pages/ProductDetail/ProductDetail";
 import ProductsPage from "./pages/Products/ProductsPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
+import MyOrdersPage from "./pages/Orders/MyOrdersPage";
+import OrderDetailPage from "./pages/Orders/OrderDetailPage";
 import SearchPage from "./pages/Search/SearchPage";
 
 function RedirectVnpayDemoToSandbox() {
@@ -83,6 +85,8 @@ function App() {
 
         {/* 4. KHÁCH HÀNG */}
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/orders" element={<MyOrdersPage />} />
+        <Route path="/orders/:orderId" element={<OrderDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/thanh-toan" element={<CheckoutPage />} />

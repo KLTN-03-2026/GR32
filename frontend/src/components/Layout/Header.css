@@ -212,9 +212,84 @@
 
 .header-icons {
   display: flex;
+  align-items: center;
   gap: 15px;
   font-size: 18px;
   color: #555;
+}
+
+/* Dropdown tài khoản (giống cơ chế hover DANH MỤC) */
+.header-account-dropdown.nav-dropdown {
+  position: relative;
+}
+
+.header-account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 6px;
+  border-radius: 8px;
+  color: #555;
+  transition: color 0.2s, background 0.2s;
+}
+
+.header-account-trigger:hover,
+.header-account-dropdown:hover .header-account-trigger,
+.header-account-dropdown.account-nav-active .header-account-trigger {
+  color: #222;
+  background: #f4f4f4;
+}
+
+.account-dropdown-arrow {
+  font-size: 9px;
+  margin-left: 0;
+}
+
+.header-account-dropdown .dropdown-menu.header-account-menu {
+  left: auto;
+  right: 0;
+  transform: none;
+  min-width: 240px;
+  padding: 12px 0;
+  flex-direction: column;
+  gap: 0;
+}
+
+.header-account-dropdown .header-account-col {
+  width: 100%;
+}
+
+.header-account-dropdown .header-account-col h4 {
+  display: none;
+}
+
+.header-account-dropdown .header-account-col a.header-account-link {
+  display: block;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s, padding-left 0.15s;
+}
+
+.header-account-dropdown .header-account-col a.header-account-link:hover {
+  background: #f7f7f7;
+  color: #111;
+  padding-left: 22px;
+}
+
+.header-account-dropdown .header-account-col a.header-account-link.active {
+  background: #111;
+  color: #fff;
+}
+
+.header-account-dropdown .header-account-col a.header-account-link.active:hover {
+  background: #222;
+  color: #fff;
+  padding-left: 22px;
 }
 
 .header-icons i {

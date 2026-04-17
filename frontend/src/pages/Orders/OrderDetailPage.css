@@ -1,0 +1,161 @@
+.order-detail-page {
+  min-height: 60vh;
+  padding: 100px 20px 60px;
+  background: #f5f5f5;
+}
+
+.order-detail-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.order-detail-back {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: #111;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.order-detail-back:hover {
+  text-decoration: underline;
+}
+
+.order-detail-loading {
+  color: #666;
+}
+
+.order-detail-error {
+  color: #c0392b;
+}
+
+.order-detail-head h1 {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  color: #111;
+}
+
+.order-detail-meta {
+  margin: 0 0 24px;
+  color: #666;
+  font-size: 14px;
+}
+
+.order-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 700px) {
+  .order-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.od-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.od-card h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 14px;
+  color: #222;
+}
+
+.od-dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  font-size: 14px;
+}
+
+.od-dl dt {
+  color: #888;
+  font-weight: 500;
+}
+
+.od-dl dd {
+  margin: 0;
+  color: #222;
+}
+
+.od-note p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #444;
+}
+
+.od-lines {
+  margin-top: 16px;
+}
+
+.od-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+.od-lines-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.od-lines-table th,
+.od-lines-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.od-lines-table th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.od-line-name {
+  font-weight: 600;
+  color: #111;
+}
+
+.od-line-sub {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.od-totals {
+  max-width: 320px;
+  margin-left: auto;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+}
+
+.od-total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+  color: #444;
+}
+
+.od-total-row.discount {
+  color: #2e7d32;
+}
+
+.od-total-row.grand {
+  font-weight: 800;
+  font-size: 16px;
+  color: #111;
+  border-top: 1px solid #ddd;
+  margin-top: 8px;
+  padding-top: 12px;
+}

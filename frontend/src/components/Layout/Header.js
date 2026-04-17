@@ -205,11 +205,43 @@ const Header = () => {
                   title="Trang quản trị"
                 ></i>
               )}
-              <i
-                className="fas fa-user-circle"
-                onClick={() => navigate("/profile")}
-                title="Tài khoản"
-              ></i>
+              <div
+                className={`nav-dropdown header-account-dropdown ${
+                  location.pathname === "/profile" || location.pathname.startsWith("/orders")
+                    ? "account-nav-active"
+                    : ""
+                }`}
+              >
+                <span
+                  className="dropdown-trigger header-account-trigger"
+                  title="Tài khoản"
+                >
+                  <i className="fas fa-user-circle" />
+                  <i className="fas fa-chevron-down dropdown-arrow account-dropdown-arrow" />
+                </span>
+                <div className="dropdown-menu header-account-menu">
+                  <div className="dropdown-col header-account-col">
+                    <Link
+                      to="/profile"
+                      className={
+                        location.pathname === "/profile" ? "header-account-link active" : "header-account-link"
+                      }
+                    >
+                      Quản lý thông tin cá nhân
+                    </Link>
+                    <Link
+                      to="/orders"
+                      className={
+                        location.pathname.startsWith("/orders")
+                          ? "header-account-link active"
+                          : "header-account-link"
+                      }
+                    >
+                      Quản lý đơn hàng
+                    </Link>
+                  </div>
+                </div>
+              </div>
               <div className="cart-wrapper" onClick={() => navigate("/cart")}>
                 <i className="fas fa-shopping-cart"></i>
                 {cartCount > 0 && <span className="cart-count">{cartCount}</span>}

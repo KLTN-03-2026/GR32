@@ -43,6 +43,46 @@
   background: #444;
 }
 
+/* ========== PAYMENT BANNER (VNPAY return) ========== */
+.cart-payment-banner {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.cart-payment-banner i {
+  font-size: 22px;
+  margin-top: 2px;
+}
+
+.cart-payment-success {
+  background: #f0f7f0;
+  border: 1px solid #c8e6c9;
+  color: #1b5e20;
+}
+
+.cart-payment-failed {
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  color: #7f1d1d;
+}
+
+.cart-payment-banner strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.cart-payment-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
 /* ========== CONTAINER ========== */
 .cart-container {
   max-width: 960px;
@@ -141,6 +181,9 @@
   flex-shrink: 0;
   cursor: pointer;
   border: 1px solid #eee;
+  text-decoration: none;
+  color: inherit;
+  display: block;
 }
 
 .cart-item-img img {
@@ -171,6 +214,8 @@
   color: #222;
   cursor: pointer;
   transition: color 0.2s;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .cart-item-name:hover {
@@ -309,7 +354,21 @@
   justify-content: center;
   gap: 20px;
   margin-top: 30px;
-  padding-bottom: 20px;
+  padding: 24px 16px 20px;
+  position: relative;
+  z-index: 2147483000;
+  isolation: isolate;
+  background: transparent;
+}
+
+.cart-bottom-actions--checkout {
+  position: sticky;
+  bottom: 0;
+}
+
+.cart-checkout-form {
+  display: inline;
+  margin: 0;
 }
 
 .btn-cart-cancel {
@@ -343,6 +402,18 @@
 
 .btn-cart-checkout:hover {
   background: #000;
+}
+
+a.btn-cart-checkout,
+button.btn-cart-checkout,
+.cart-checkout-form button.btn-cart-checkout {
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  box-sizing: border-box;
+  line-height: normal;
+  vertical-align: middle;
+  font-family: inherit;
 }
 
 /* ========== RESPONSIVE ========== */

@@ -1,7 +1,8 @@
 import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import API_BASE from "../../config";
+import { getOrderFlowPath } from "../../checkoutPath";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
 import "./CartPage.css";
@@ -15,6 +16,8 @@ function formatPrice(v) {
 
 const CartPage = () => {
   const navigate = useNavigate();
+  const orderFlowPath = getOrderFlowPath();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(null);
@@ -39,6 +42,20 @@ const CartPage = () => {
   useEffect(() => {
     fetchCart();
   }, [fetchCart]);
+
+  useEffect(() => {
+    const pay = searchParams.get("payment");
+    if (pay === "success" || pay === "failed") {
+      window.dispatchEvent(new Event("cartUpdated"));
+    }
+    if (pay === "success" || pay === "failed") {
+      const t = setTimeout(() => {
+        setSearchParams({}, { replace: true });
+      }, 8000);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [searchParams, setSearchParams]);
 
   const handleUpdateQty = async (itemId, newQty) => {
     if (newQty < 1) return;
@@ -82,13 +99,46 @@ const CartPage = () => {
     );
   }
 
+  const paymentStatus = searchParams.get("payment");
+  const maDonParam = searchParams.get("ma_don");
+
   return (
     <>
       <Header />
       <div className="cart-container">
+        {paymentStatus === "success" && (
+          <div className="cart-payment-banner cart-payment-success">
+            <i className="fas fa-check-circle" />
+            <div>
+              <strong>Đặt hàng / thanh toán thành công!</strong>
+              {maDonParam && <p>Mã đơn: <strong>{maDonParam}</strong></p>}
+              <p className="cart-payment-sub">Bạn có thể tiếp tục mua sắm hoặc xem lại đơn trong tài khoản (tính năng danh sách đơn có thể bổ sung sau).</p>
+            </div>
+          </div>
+        )}
+        {paymentStatus === "failed" && (
+          <div className="cart-payment-banner cart-payment-failed">
+            <i className="fas fa-times-circle" />
+            <div>
+              <strong>Thanh toán không thành công</strong>
+              <p className="cart-payment-sub">Đơn hàng của quý khách thanh toán không thành công. Vui lòng thử lại hoặc chọn phương thức khác.</p>
+            </div>
+          </div>
+        )}
         <div className="cart-header-row">
           <h2 className="cart-title">Giỏ hàng của bạn</h2>
-          <button className="cart-close-btn" onClick={() => navigate(-1)} title="Đóng">
+          <button
+            type="button"
+            className="cart-close-btn"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate("/products");
+              }
+            }}
+            title="Đóng"
+          >
             <i className="fas fa-times"></i>
           </button>
         </div>
@@ -97,7 +147,7 @@ const CartPage = () => {
           <div className="cart-empty">
             <i className="fas fa-shopping-cart cart-empty-icon"></i>
             <p>Giỏ hàng trống</p>
-            <button className="btn-continue-shopping" onClick={() => navigate("/products")}>
+            <button type="button" className="btn-continue-shopping" onClick={() => navigate("/products")}>
               Tiếp tục mua sắm
             </button>
           </div>
@@ -117,17 +167,17 @@ const CartPage = () => {
               {items.map((item) => (
                 <div className="cart-item" key={item._id}>
                   <div className="col-product">
-                    <div className="cart-item-img" onClick={() => navigate(`/product/${item.san_pham_id}`)}>
+                    <Link className="cart-item-img" to={`/product/${item.san_pham_id}`} onClick={(e) => e.stopPropagation()}>
                       {item.hinh_anh ? (
                         <img src={item.hinh_anh} alt={item.ten_san_pham} />
                       ) : (
                         <div className="cart-no-img"><i className="fas fa-image"></i></div>
                       )}
-                    </div>
+                    </Link>
                     <div className="cart-item-info">
-                      <span className="cart-item-name" onClick={() => navigate(`/product/${item.san_pham_id}`)}>
+                      <Link className="cart-item-name" to={`/product/${item.san_pham_id}`} onClick={(e) => e.stopPropagation()}>
                         {item.ten_san_pham}
-                      </span>
+                      </Link>
                       {(item.mau_sac || item.kich_co) && (
                         <span className="cart-item-variant">
                           {item.mau_sac && `Màu: ${item.mau_sac}`}
@@ -145,11 +195,13 @@ const CartPage = () => {
                   <div className="col-qty">
                     <div className="cart-qty-control">
                       <button
+                        type="button"
                         onClick={() => handleUpdateQty(item._id, item.so_luong - 1)}
                         disabled={item.so_luong <= 1 || updating === item._id}
                       >−</button>
                       <span className="cart-qty-value">{item.so_luong}</span>
                       <button
+                        type="button"
                         onClick={() => handleUpdateQty(item._id, item.so_luong + 1)}
                         disabled={updating === item._id}
                       >+</button>
@@ -161,7 +213,7 @@ const CartPage = () => {
                   </div>
 
                   <div className="col-action">
-                    <button className="btn-remove-item" onClick={() => handleRemove(item._id, item.ten_san_pham)} title="Xóa">
+                    <button type="button" className="btn-remove-item" onClick={() => handleRemove(item._id, item.ten_san_pham)} title="Xóa">
                       <i className="fas fa-trash-alt"></i>
                     </button>
                   </div>
@@ -178,13 +230,20 @@ const CartPage = () => {
             </div>
 
             {/* ACTIONS */}
-            <div className="cart-bottom-actions">
-              <button className="btn-cart-cancel" onClick={() => navigate("/products")}>
+            <div className="cart-bottom-actions cart-bottom-actions--checkout">
+              <button type="button" className="btn-cart-cancel" onClick={() => navigate("/products")}>
                 Hủy
               </button>
-              <button className="btn-cart-checkout" onClick={() => navigate("/checkout")}>
-                Thanh toán
-              </button>
+              <form
+                className="cart-checkout-form"
+                method="get"
+                action={orderFlowPath}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button type="submit" className="btn-cart-checkout">
+                  Thanh toán
+                </button>
+              </form>
             </div>
           </>
         )}

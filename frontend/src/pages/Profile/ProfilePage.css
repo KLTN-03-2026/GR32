@@ -151,6 +151,36 @@
   word-break: break-word;
 }
 
+.profile-address-value {
+  white-space: pre-wrap;
+}
+
+.profile-field-hint {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: #888;
+  line-height: 1.4;
+}
+
+.profile-dia-chi-input {
+  padding: 11px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  background: #fafafa;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 72px;
+  transition: border-color 0.2s;
+}
+
+.profile-dia-chi-input:focus {
+  outline: none;
+  border-color: #222;
+  background: #fff;
+}
+
 .btn-edit-profile {
   display: flex;
   align-items: center;
@@ -196,6 +226,7 @@
 }
 
 .profile-edit-form input,
+.profile-edit-form textarea,
 .password-form input {
   padding: 11px 14px;
   border: 1px solid #ddd;
@@ -207,6 +238,7 @@
 }
 
 .profile-edit-form input:focus,
+.profile-edit-form textarea:focus,
 .password-form input:focus {
   outline: none;
   border-color: #222;

@@ -189,7 +189,7 @@
 
 .admin-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 20px;
 }
 
@@ -201,6 +201,18 @@
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+a.stat-card.stat-card--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+a.stat-card.stat-card--link:hover {
+  border-color: #bbb;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
 }
 
 .stat-card i {

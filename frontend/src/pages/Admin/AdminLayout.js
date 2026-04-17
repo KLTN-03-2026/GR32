@@ -1,12 +1,29 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import "./Admin.css";
+
+const ADMIN_SHELL_SESSION_KEY = "noname_admin_shell_synced";
 
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const shellSyncDone = useRef(false);
+
+  // Tránh bundle JS cũ còn trong bộ nhớ (đã mở trang chủ trước đó): lần đầu vào admin trong tab, reload 1 lần như F5.
+  useEffect(() => {
+    if (shellSyncDone.current) return;
+    try {
+      if (sessionStorage.getItem(ADMIN_SHELL_SESSION_KEY) !== "1") {
+        shellSyncDone.current = true;
+        sessionStorage.setItem(ADMIN_SHELL_SESSION_KEY, "1");
+        window.location.reload();
+      }
+    } catch {
+      /* sessionStorage không dùng được — bỏ qua */
+    }
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -34,7 +51,11 @@ const AdminLayout = () => {
     }
   };
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
+  const path = location.pathname;
+  const navActive = (prefix) =>
+    prefix === "/admin-dashboard"
+      ? path === "/admin-dashboard"
+      : path === prefix || path.startsWith(`${prefix}/`);
 
   if (!user) return null;
 
@@ -52,19 +73,23 @@ const AdminLayout = () => {
         </div>
 
         <nav className="sidebar-nav">
-          <Link to="/admin-dashboard" className={`sidebar-link ${isActive("/admin-dashboard") && !isActive("/admin-dashboard/products") ? "active" : ""}`}>
+          <Link to="/admin-dashboard" className={`sidebar-link ${navActive("/admin-dashboard") ? "active" : ""}`}>
             <i className="fas fa-tachometer-alt"></i>
             {sidebarOpen && <span>Tổng quan</span>}
           </Link>
-          <Link to="/admin-dashboard/products" className={`sidebar-link ${isActive("/admin-dashboard/products") ? "active" : ""}`}>
+          <Link to="/admin-dashboard/products" className={`sidebar-link ${navActive("/admin-dashboard/products") ? "active" : ""}`}>
             <i className="fas fa-box"></i>
             {sidebarOpen && <span>Quản lý sản phẩm</span>}
           </Link>
-          <Link to="/admin-dashboard/orders" className={`sidebar-link ${isActive("/admin-dashboard/orders") ? "active" : ""}`}>
+          <Link to="/admin-dashboard/orders" className={`sidebar-link ${navActive("/admin-dashboard/orders") ? "active" : ""}`}>
             <i className="fas fa-receipt"></i>
             {sidebarOpen && <span>Đơn hàng</span>}
           </Link>
-          <Link to="/admin-dashboard/users" className={`sidebar-link ${isActive("/admin-dashboard/users") ? "active" : ""}`}>
+          <Link to="/admin-dashboard/payments" className={`sidebar-link ${navActive("/admin-dashboard/payments") ? "active" : ""}`}>
+            <i className="fas fa-money-check-alt"></i>
+            {sidebarOpen && <span>Quản lý thanh toán</span>}
+          </Link>
+          <Link to="/admin-dashboard/users" className={`sidebar-link ${navActive("/admin-dashboard/users") ? "active" : ""}`}>
             <i className="fas fa-users"></i>
             {sidebarOpen && <span>Khách hàng</span>}
           </Link>

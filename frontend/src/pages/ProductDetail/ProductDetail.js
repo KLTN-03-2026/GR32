@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import API_BASE from "../../config";
+import { getOrderFlowPath } from "../../checkoutPath";
 import Header from "../../components/Layout/Header";
 import Footer from "../../components/Layout/Footer";
 import "./ProductDetail.css";
@@ -157,7 +158,7 @@ export default function ProductDetail() {
         so_luong: quantity,
       }, { headers: { Authorization: `Bearer ${token}` } });
       window.dispatchEvent(new Event("cartUpdated"));
-      navigate("/cart");
+      navigate(getOrderFlowPath());
     } catch (err) {
       flash(err.response?.data?.message || "Lỗi!", "warn");
     }

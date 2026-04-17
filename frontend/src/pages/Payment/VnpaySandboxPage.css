@@ -1,0 +1,229 @@
+/* Trang giả lập cổng VNPAY sandbox — layout full màn, không Header/Footer shop */
+
+.vnpay-sandbox-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #e8eef4;
+  font-family: "Segoe UI", Roboto, system-ui, sans-serif;
+}
+
+.vnpay-sandbox-topbar {
+  background: linear-gradient(90deg, #0a3d6b 0%, #0d5a9c 50%, #0a3d6b 100%);
+  color: #fff;
+  padding: 14px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.vnpay-sandbox-topbar-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vnpay-sandbox-brand {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.vnpay-sandbox-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.vnpay-sandbox-main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px 48px;
+}
+
+.vnpay-sandbox-card {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(10, 61, 107, 0.12);
+  padding: 28px 24px 24px;
+  border: 1px solid #d0dce8;
+}
+
+.vnpay-sandbox-title {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0a3d6b;
+  text-align: center;
+}
+
+.vnpay-sandbox-sub {
+  margin: 0 0 24px;
+  font-size: 0.85rem;
+  color: #5a6a7a;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.vnpay-sandbox-err {
+  color: #b71c1c;
+  font-size: 0.9rem;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+.vnpay-sandbox-amount-block {
+  text-align: center;
+  padding: 20px 16px;
+  margin-bottom: 20px;
+  background: linear-gradient(180deg, #f0f6fc 0%, #fff 100%);
+  border: 1px solid #c5d9eb;
+  border-radius: 8px;
+}
+
+.vnpay-sandbox-amount-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #607d8b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.vnpay-sandbox-amount {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0a3d6b;
+}
+
+.vnpay-sandbox-meta {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  font-size: 0.95rem;
+  border-top: 1px solid #eee;
+}
+
+.vnpay-sandbox-meta li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  gap: 12px;
+}
+
+.vnpay-sandbox-meta li span {
+  color: #78909c;
+}
+
+.vnpay-sandbox-meta li strong {
+  color: #263238;
+  font-weight: 600;
+  word-break: break-all;
+  text-align: right;
+}
+
+.vnpay-sandbox-banks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.vnpay-sandbox-bank-pill {
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #eceff1;
+  color: #546e7a;
+  font-weight: 600;
+}
+
+.vnpay-sandbox-muted {
+  font-size: 0.88rem;
+  color: #78909c;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.vnpay-sandbox-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #eceff1;
+}
+
+.vnpay-sandbox-btn {
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.vnpay-sandbox-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.vnpay-sandbox-btn.secondary {
+  background: #fff;
+  color: #455a64;
+  border-color: #b0bec5;
+}
+
+.vnpay-sandbox-btn.secondary:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.vnpay-sandbox-btn.danger {
+  background: #fff;
+  color: #c62828;
+  border-color: #e57373;
+}
+
+.vnpay-sandbox-btn.danger:hover:not(:disabled) {
+  background: #ffebee;
+}
+
+.vnpay-sandbox-btn.primary {
+  background: #2e7d32;
+  color: #fff;
+  border-color: #2e7d32;
+}
+
+.vnpay-sandbox-btn.primary:hover:not(:disabled) {
+  background: #1b5e20;
+  border-color: #1b5e20;
+}
+
+.vnpay-sandbox-footer {
+  padding: 16px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #90a4ae;
+}
+
+@media (max-width: 480px) {
+  .vnpay-sandbox-actions {
+    flex-direction: column;
+  }
+
+  .vnpay-sandbox-btn {
+    width: 100%;
+  }
+}

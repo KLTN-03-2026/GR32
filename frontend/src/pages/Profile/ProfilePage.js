@@ -186,8 +186,8 @@ const ProfilePage = () => {
                   </div>
                 </div>
                 <div className="info-row">
-                  <span className="info-label">ĐỊA CHỈ</span>
-                  <span className="info-value">{profile?.dia_chi || "Chưa cập nhật"}</span>
+                  <span className="info-label">ĐỊA CHỈ NHẬN HÀNG</span>
+                  <span className="info-value profile-address-value">{profile?.dia_chi || "Chưa cập nhật"}</span>
                 </div>
                 <button className="btn-edit-profile" onClick={() => setIsEditing(true)}>
                   <i className="fas fa-cog"></i> Chỉnh sửa thông tin
@@ -212,11 +212,14 @@ const ProfilePage = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Địa chỉ</label>
-                  <input
-                    type="text"
+                  <label>Địa chỉ nhận hàng</label>
+                  <p className="profile-field-hint">Địa chỉ mặc định của bạn; khi đặt hàng bạn vẫn có thể nhập địa chỉ khác (ví dụ gửi hộ). Cửa hàng tại Đà Nẵng.</p>
+                  <textarea
+                    className="profile-dia-chi-input"
+                    rows={3}
                     value={editForm.dia_chi}
                     onChange={(e) => setEditForm({ ...editForm, dia_chi: e.target.value })}
+                    placeholder="Ghi đầy đủ địa chỉ nhận hàng của bạn"
                   />
                 </div>
                 {errorMsg && <p className="form-error">{errorMsg}</p>}

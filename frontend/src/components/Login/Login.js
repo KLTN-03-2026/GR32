@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
 import "./Login.css";
 
@@ -12,6 +12,7 @@ const Login = () => {
   const [showResend, setShowResend] = useState(false);
   const [resendMsg, setResendMsg] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,10 +29,15 @@ const Login = () => {
 
       const vai_tro = res.data.user.vai_tro;
       if (vai_tro === "admin" || vai_tro === "nhan_vien") {
-        navigate("/admin-dashboard");
-      } else {
-        navigate("/home");
+        window.location.assign(`${window.location.origin}/admin-dashboard`);
+        return;
       }
+      const raw = location.state?.from;
+      const fromPath =
+        typeof raw === "string" ? raw : raw?.pathname || "";
+      const next =
+        fromPath && fromPath !== "/login" ? fromPath : "/home";
+      navigate(next, { replace: true });
     } catch (err) {
       const msg = err.response?.data?.message || "Lỗi đăng nhập!";
       setError(msg);

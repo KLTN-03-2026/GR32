@@ -199,7 +199,9 @@ const Header = () => {
               {(user.vai_tro === "admin" || user.vai_tro === "nhan_vien") && (
                 <i
                   className="fas fa-tools"
-                  onClick={() => navigate("/admin-dashboard")}
+                  onClick={() => {
+                    window.location.assign(`${window.location.origin}/admin-dashboard`);
+                  }}
                   title="Trang quản trị"
                 ></i>
               )}

@@ -1,8 +1,10 @@
 import {
+  Link,
   Navigate,
   Route,
   BrowserRouter as Router,
   Routes,
+  useSearchParams,
 } from "react-router-dom";
 
 import ForgotPassword from "./components/Login/ForgotPassword";
@@ -14,13 +16,47 @@ import AdminDashboardHome from "./pages/Admin/AdminDashboardHome";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import AdminProductForm from "./pages/Admin/AdminProductForm";
 import AdminProducts from "./pages/Admin/AdminProducts";
+import AdminPaymentsPage from "./pages/Admin/AdminPaymentsPage";
 import CartPage from "./pages/Cart/CartPage";
+import CheckoutPage from "./pages/Checkout/CheckoutPage";
+import VnpaySandboxPage from "./pages/Payment/VnpaySandboxPage";
 import CategoryPage from "./pages/Category/CategoryPage";
 import Home from "./pages/Home/Home";
 import ProductDetail from "./pages/ProductDetail/ProductDetail";
 import ProductsPage from "./pages/Products/ProductsPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import SearchPage from "./pages/Search/SearchPage";
+
+function RedirectVnpayDemoToSandbox() {
+  const [searchParams] = useSearchParams();
+  const q = searchParams.toString();
+  return (
+    <Navigate
+      to={q ? `/payment/vnpay-sandbox?${q}` : "/payment/vnpay-sandbox"}
+      replace
+    />
+  );
+}
+
+function NotFound() {
+  return (
+    <div
+      style={{
+        padding: "80px 24px",
+        textAlign: "center",
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
+      <h1 style={{ fontSize: 22 }}>Không tìm thấy trang</h1>
+      <p style={{ color: "#666", marginTop: 8 }}>
+        Đường dẫn không khớp với ứng dụng.
+      </p>
+      <Link to="/" style={{ color: "#222", fontWeight: 600 }}>
+        Về trang chủ
+      </Link>
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -42,10 +78,17 @@ function App() {
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/danh-muc/:slug" element={<CategoryPage />} />
+        <Route path="/ve-chung-toi" element={<Navigate to="/" replace />} />
+        <Route path="/ho-tro" element={<Navigate to="/" replace />} />
 
         {/* 4. KHÁCH HÀNG */}
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/thanh-toan" element={<CheckoutPage />} />
+        <Route path="/s/x" element={<CheckoutPage />} />
+        <Route path="/payment/vnpay-demo" element={<RedirectVnpayDemoToSandbox />} />
+        <Route path="/payment/vnpay-sandbox" element={<VnpaySandboxPage />} />
 
         {/* 5. HỆ THỐNG QUẢN TRỊ (Admin / Nhân viên) */}
         <Route path="/admin-dashboard" element={<AdminLayout />}>
@@ -53,10 +96,11 @@ function App() {
           <Route path="products" element={<AdminProducts />} />
           <Route path="products/new" element={<AdminProductForm />} />
           <Route path="products/edit/:id" element={<AdminProductForm />} />
+          <Route path="payments" element={<AdminPaymentsPage />} />
         </Route>
 
-        {/* 6. 404 */}
-        <Route path="*" element={<Navigate to="/" />} />
+        {/* 6. 404 — không redirect về / (tránh che lỗi route, trông như “về trang chủ”) */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

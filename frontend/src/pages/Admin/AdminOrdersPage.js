@@ -13,6 +13,27 @@ const STATUS_LABEL = {
   huy: "Đã hủy",
 };
 
+const PAY_METHOD_LABEL = {
+  cod: "COD",
+  chuyen_khoan: "Chuyển khoản",
+  vnpay: "VNPAY",
+};
+
+const PAY_STATUS_LABEL = {
+  cho_thanh_toan: "Chờ thanh toán",
+  da_thanh_toan: "Đã thanh toán",
+  that_bai: "Thất bại",
+  hoan_tien: "Hoàn tiền",
+};
+
+function payStatusClass(st) {
+  if (st === "da_thanh_toan") return "aop-pay aop-pay--ok";
+  if (st === "cho_thanh_toan") return "aop-pay aop-pay--wait";
+  if (st === "that_bai") return "aop-pay aop-pay--bad";
+  if (st === "hoan_tien") return "aop-pay aop-pay--refund";
+  return "aop-pay";
+}
+
 function formatMoney(n) {
   if (n == null) return "—";
   return `${Number(n).toLocaleString("vi-VN")}đ`;
@@ -93,7 +114,7 @@ const AdminOrdersPage = () => {
 
   return (
     <div className="aop-page">
-      <h2 className="aop-title">Đơn hàng</h2>
+      <h2 className="aop-title">Quản lý đơn hàng</h2>
       <p className="aop-hint">
         Sau khi shipper báo đã giao, chuyển đơn từ <strong>Đang vận chuyển</strong> sang{" "}
         <strong>Đã giao hàng</strong>. Khách xác nhận nhận hàng trên web để hoàn thành.
@@ -141,8 +162,9 @@ const AdminOrdersPage = () => {
                   <th>Mã đơn</th>
                   <th>Ngày</th>
                   <th>Tổng</th>
-                  <th>Trạng thái</th>
-                  <th>Đổi trạng thái</th>
+                  <th>Thanh toán</th>
+                  <th>Trạng thái đơn</th>
+                  <th>Đổi trạng thái đơn</th>
                 </tr>
               </thead>
               <tbody>
@@ -193,6 +215,16 @@ function OrderRow({ order, onSave, busy }) {
       <td className="aop-ma">{order.ma_don}</td>
       <td>{formatDt(order.createdAt)}</td>
       <td>{formatMoney(order.tong_cong)}</td>
+      <td className="aop-pay-cell">
+        <div className="aop-pay-line">
+          <span className="aop-pay-method">
+            {PAY_METHOD_LABEL[order.hinh_thuc_thanh_toan] || order.hinh_thuc_thanh_toan || "—"}
+          </span>
+        </div>
+        <span className={payStatusClass(order.trang_thai_thanh_toan)}>
+          {PAY_STATUS_LABEL[order.trang_thai_thanh_toan] || order.trang_thai_thanh_toan || "—"}
+        </span>
+      </td>
       <td>
         <span className="aop-st">{STATUS_LABEL[order.trang_thai_don] || order.trang_thai_don}</span>
       </td>

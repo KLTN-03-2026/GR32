@@ -83,7 +83,7 @@ const AdminLayout = () => {
           </Link>
           <Link to="/admin-dashboard/orders" className={`sidebar-link ${navActive("/admin-dashboard/orders") ? "active" : ""}`}>
             <i className="fas fa-receipt"></i>
-            {sidebarOpen && <span>Đơn hàng</span>}
+            {sidebarOpen && <span>Quản lý đơn hàng</span>}
           </Link>
           <Link to="/admin-dashboard/payments" className={`sidebar-link ${navActive("/admin-dashboard/payments") ? "active" : ""}`}>
             <i className="fas fa-money-check-alt"></i>

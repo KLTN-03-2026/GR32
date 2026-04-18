@@ -97,6 +97,49 @@
   font-weight: 600;
 }
 
+.aop-pay-cell {
+  min-width: 140px;
+  vertical-align: top;
+}
+
+.aop-pay-line {
+  margin-bottom: 6px;
+}
+
+.aop-pay-method {
+  font-size: 12px;
+  color: #555;
+  font-weight: 600;
+}
+
+.aop-pay {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.aop-pay--ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.aop-pay--wait {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.aop-pay--bad {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.aop-pay--refund {
+  background: #e3f2fd;
+  color: #0d47a1;
+}
+
 .aop-row-act {
   display: flex;
   gap: 8px;

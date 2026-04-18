@@ -8,6 +8,10 @@ const reviewSchema = new mongoose.Schema(
     so_sao: { type: Number, required: true, min: 1, max: 5 },
     noi_dung: { type: String, required: true },
     ngay_tao: { type: Date, default: Date.now },
+    /** Đánh giá từ đơn hàng (PB38): mỗi dòng đơn tối đa 1 lần */
+    don_hang_id: { type: mongoose.Schema.Types.ObjectId, ref: "Order", default: null, index: true },
+    dong_index: { type: Number, min: 0, default: null },
+    tags: [{ type: String }],
   },
   { collection: "danh_gia" }
 );

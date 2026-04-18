@@ -7,7 +7,8 @@ export function labelHinhThucThanhToan(v) {
 
 export function labelTrangThaiDon(v) {
   if (v === "cho_xu_ly") return "Đang xử lý";
-  if (v === "dang_giao") return "Đang giao";
+  if (v === "dang_giao") return "Đang vận chuyển";
+  if (v === "da_giao_hang") return "Đã giao hàng";
   if (v === "hoan_thanh") return "Hoàn thành";
   if (v === "huy") return "Đã hủy";
   return v || "—";
@@ -24,6 +25,7 @@ export function labelTrangThaiThanhToan(v) {
 export function iconTrangThaiDon(v) {
   if (v === "cho_xu_ly") return "fa-check-circle";
   if (v === "dang_giao") return "fa-truck";
+  if (v === "da_giao_hang") return "fa-box-open";
   if (v === "hoan_thanh") return "fa-flag-checkered";
   if (v === "huy") return "fa-ban";
   return "fa-circle";

@@ -189,6 +189,11 @@
   color: #b71c1c;
 }
 
+.order-status-pill.st-da_giao_hang {
+  background: #fff3e0;
+  color: #e65100;
+}
+
 .my-orders-detail-link {
   color: #111;
   font-weight: 600;

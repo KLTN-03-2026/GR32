@@ -1,9 +1,10 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import API_BASE from "../../config";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
+import OrderReviewModal from "./OrderReviewModal";
 import {
   labelHinhThucThanhToan,
   labelTrangThaiDon,
@@ -35,48 +36,99 @@ const OrderDetailPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
+  const [reviewedLineIndices, setReviewedLineIndices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const [toast, setToast] = useState("");
+
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewLineIndex, setReviewLineIndex] = useState(null);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   const getToken = () => localStorage.getItem("token");
 
-  useEffect(() => {
+  const loadOrder = useCallback(async () => {
     const token = getToken();
     if (!token) {
       navigate("/login", { state: { from: `/orders/${orderId}` } });
       return;
     }
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await axios.get(`${API}/${orderId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!cancelled) setOrder(res.data);
-      } catch (err) {
-        if (err.response?.status === 401) {
-          navigate("/login", { state: { from: `/orders/${orderId}` } });
-          return;
-        }
-        if (!cancelled) {
-          setError(err.response?.data?.message || "Không tải được đơn hàng.");
-          setOrder(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+    setLoading(true);
+    setError("");
+    try {
+      const res = await axios.get(`${API}/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOrder(res.data);
+      setReviewedLineIndices(res.data.reviewedLineIndices || []);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        navigate("/login", { state: { from: `/orders/${orderId}` } });
+        return;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+      setError(err.response?.data?.message || "Không tải được đơn hàng.");
+      setOrder(null);
+    } finally {
+      setLoading(false);
+    }
   }, [orderId, navigate]);
+
+  useEffect(() => {
+    loadOrder();
+  }, [loadOrder]);
+
+  const handleConfirmReceived = async () => {
+    const token = getToken();
+    if (!token) return;
+    setConfirmBusy(true);
+    setToast("");
+    try {
+      const res = await axios.post(
+        `${API}/${orderId}/confirm-received`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setToast(res.data.message || "Đã xác nhận.");
+      await loadOrder();
+    } catch (err) {
+      setToast(err.response?.data?.message || "Không xác nhận được.");
+    } finally {
+      setConfirmBusy(false);
+    }
+  };
+
+  const openReview = (idx) => {
+    setReviewLineIndex(idx);
+    setReviewOpen(true);
+  };
+
+  const handleReviewSubmit = async (payload) => {
+    const token = getToken();
+    if (!token) return;
+    setReviewSubmitting(true);
+    setToast("");
+    try {
+      const res = await axios.post(`${API}/${orderId}/reviews`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setToast(res.data.message || "Đã gửi đánh giá.");
+      setReviewOpen(false);
+      setReviewLineIndex(null);
+      await loadOrder();
+    } catch (err) {
+      setToast(err.response?.data?.message || "Gửi đánh giá thất bại.");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   const shipLabel =
     order?.phuong_thuc_van_chuyen === "nhan_tai_cua_hang"
       ? "Nhận tại cửa hàng"
       : "Giao tận nơi";
+
+  const reviewLine = reviewLineIndex != null && order?.chi_tiet ? order.chi_tiet[reviewLineIndex] : null;
 
   return (
     <>
@@ -87,6 +139,8 @@ const OrderDetailPage = () => {
             ← Quay lại danh sách đơn
           </Link>
 
+          {toast && <div className="order-detail-toast">{toast}</div>}
+
           {loading && <p className="order-detail-loading">Đang tải...</p>}
           {error && !loading && <p className="order-detail-error">{error}</p>}
 
@@ -96,6 +150,20 @@ const OrderDetailPage = () => {
                 <h1>Chi tiết đơn #{order.ma_don}</h1>
                 <p className="order-detail-meta">Đặt lúc: {formatDateTime(order.createdAt)}</p>
               </div>
+
+              {order.trang_thai_don === "da_giao_hang" && (
+                <div className="od-confirm-banner">
+                  <p>Đơn đã được giao. Vui lòng xác nhận khi bạn đã nhận được hàng.</p>
+                  <button
+                    type="button"
+                    className="od-btn-confirm"
+                    onClick={handleConfirmReceived}
+                    disabled={confirmBusy}
+                  >
+                    {confirmBusy ? "Đang xử lý..." : "Đã nhận được hàng"}
+                  </button>
+                </div>
+              )}
 
               <div className="order-detail-grid">
                 <section className="od-card">
@@ -150,22 +218,46 @@ const OrderDetailPage = () => {
                         <th>Đơn giá</th>
                         <th>SL</th>
                         <th>Thành tiền</th>
+                        <th>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {(order.chi_tiet || []).map((line, idx) => (
-                        <tr key={`${line.san_pham_id}-${idx}`}>
-                          <td>
-                            <div className="od-line-name">{line.ten_san_pham}</div>
-                          </td>
-                          <td>
-                            {[line.mau_sac, line.kich_co].filter(Boolean).join(" · ") || "—"}
-                          </td>
-                          <td>{formatMoney(line.gia)}</td>
-                          <td>{line.so_luong}</td>
-                          <td className="od-line-sub">{formatMoney(line.gia * line.so_luong)}</td>
-                        </tr>
-                      ))}
+                      {(order.chi_tiet || []).map((line, idx) => {
+                        const canReview =
+                          order.trang_thai_don === "hoan_thanh" &&
+                          !(reviewedLineIndices || []).includes(idx);
+                        const reviewed = (reviewedLineIndices || []).includes(idx);
+                        return (
+                          <tr key={`${line.san_pham_id}-${idx}`}>
+                            <td>
+                              <div className="od-line-name">{line.ten_san_pham}</div>
+                            </td>
+                            <td>
+                              {[line.mau_sac, line.kich_co].filter(Boolean).join(" · ") || "—"}
+                            </td>
+                            <td>{formatMoney(line.gia)}</td>
+                            <td>{line.so_luong}</td>
+                            <td className="od-line-sub">{formatMoney(line.gia * line.so_luong)}</td>
+                            <td className="od-line-actions">
+                              {canReview && (
+                                <button
+                                  type="button"
+                                  className="od-btn-review"
+                                  onClick={() => openReview(idx)}
+                                >
+                                  Đánh giá
+                                </button>
+                              )}
+                              {order.trang_thai_don === "hoan_thanh" && reviewed && (
+                                <span className="od-reviewed-label">Đã đánh giá</span>
+                              )}
+                              {order.trang_thai_don !== "hoan_thanh" && (
+                                <span className="od-review-muted">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -191,6 +283,19 @@ const OrderDetailPage = () => {
           )}
         </div>
       </div>
+
+      <OrderReviewModal
+        open={reviewOpen}
+        line={reviewLine}
+        lineIndex={reviewLineIndex}
+        onClose={() => {
+          setReviewOpen(false);
+          setReviewLineIndex(null);
+        }}
+        onSubmit={handleReviewSubmit}
+        submitting={reviewSubmitting}
+      />
+
       <Footer />
     </>
   );

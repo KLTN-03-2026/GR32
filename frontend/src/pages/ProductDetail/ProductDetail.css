@@ -257,6 +257,38 @@
 .no-reviews { color: #aaa; font-size: 14px; text-align: center; padding: 20px; }
 
 /* Write Review */
+.pd-review-policy {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.65;
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.pd-policy-link {
+  cursor: pointer;
+  color: #111;
+  text-decoration: underline;
+}
+
+.rv-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.rv-tag {
+  font-size: 12px;
+  padding: 4px 10px;
+  background: #f0f0f0;
+  border-radius: 20px;
+  color: #444;
+}
+
 .pd-write-review { background: #fafafa; border-radius: 8px; padding: 18px; margin-top: 16px; }
 .pd-write-review h4 { margin: 0 0 12px; font-size: 15px; color: #333; }
 .wr-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }

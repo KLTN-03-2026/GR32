@@ -18,33 +18,12 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-// --- 0.1. GỬI ĐÁNH GIÁ ---
+// --- 0.1. GỬI ĐÁNH GIÁ (đã chuyển sang POST /api/orders/mine/:orderId/reviews) ---
 exports.addReview = async (req, res) => {
-  try {
-    const { san_pham_id, nguoi_dung_id, ho_ten, so_sao, noi_dung } = req.body;
-
-    if (!so_sao || !noi_dung) {
-      return res.status(400).json({ message: "Vui lòng nhập đủ thông tin!" });
-    }
-
-    const existing = await Review.findOne({ san_pham_id, nguoi_dung_id });
-    if (existing) {
-      return res.status(400).json({ message: "Bạn đã đánh giá sản phẩm này rồi!" });
-    }
-
-    const review = await Review.create({
-      san_pham_id,
-      nguoi_dung_id,
-      ho_ten,
-      so_sao,
-      noi_dung,
-    });
-
-    res.status(201).json({ message: "Gửi đánh giá thành công!", review });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Lỗi gửi đánh giá!" });
-  }
+  return res.status(403).json({
+    message:
+      "Vui lòng đánh giá từ trang chi tiết đơn hàng sau khi xác nhận đã nhận hàng và đơn hoàn thành.",
+  });
 };
 
 // --- 1. TÌM KIẾM SẢN PHẨM (Xử lý ô Search trên Header) ---

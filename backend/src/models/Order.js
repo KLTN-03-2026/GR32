@@ -45,7 +45,7 @@ const orderSchema = new mongoose.Schema(
     },
     trang_thai_don: {
       type: String,
-      enum: ["cho_xu_ly", "dang_giao", "hoan_thanh", "huy"],
+      enum: ["cho_xu_ly", "dang_giao", "da_giao_hang", "hoan_thanh", "huy"],
       default: "cho_xu_ly",
     },
 

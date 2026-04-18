@@ -32,7 +32,8 @@ function formatDate(iso) {
 const STATUS_OPTIONS = [
   { value: "", label: "[Tất cả]" },
   { value: "cho_xu_ly", label: "Đang xử lý" },
-  { value: "dang_giao", label: "Đang giao" },
+  { value: "dang_giao", label: "Đang vận chuyển" },
+  { value: "da_giao_hang", label: "Đã giao hàng" },
   { value: "hoan_thanh", label: "Hoàn thành" },
   { value: "huy", label: "Đã hủy" },
 ];

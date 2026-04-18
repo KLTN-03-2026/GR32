@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Cart = require("../models/Cart");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const Review = require("../models/Review");
 const { createPaymentUrl, verifyReturnQuery } = require("../utils/vnpay");
 const { generateMaGiaoDich } = require("../utils/orderCodes");
 
@@ -316,7 +317,20 @@ exports.vnpayReturn = async (req, res) => {
   }
 };
 
-const ORDER_STATUS_LIST = ["cho_xu_ly", "dang_giao", "hoan_thanh", "huy"];
+const ORDER_STATUS_LIST = ["cho_xu_ly", "dang_giao", "da_giao_hang", "hoan_thanh", "huy"];
+
+async function refreshProductRating(sanPhamId) {
+  const oid = new mongoose.Types.ObjectId(sanPhamId);
+  const agg = await Review.aggregate([
+    { $match: { san_pham_id: oid } },
+    { $group: { _id: null, avg: { $avg: "$so_sao" }, count: { $sum: 1 } } },
+  ]);
+  const row = agg[0];
+  await Product.findByIdAndUpdate(sanPhamId, {
+    sao_danh_gia: row ? Math.round(row.avg * 10) / 10 : 0,
+    tong_danh_gia: row ? row.count : 0,
+  });
+}
 
 exports.myOrders = async (req, res) => {
   try {
@@ -385,7 +399,96 @@ exports.myOrderById = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Không tìm thấy đơn hàng." });
     }
-    res.json(order);
+    const reviewedRows = await Review.find({ don_hang_id: order._id }).select("dong_index").lean();
+    const reviewedLineIndices = reviewedRows.map((r) => r.dong_index).filter((i) => typeof i === "number");
+    res.json({ ...order, reviewedLineIndices });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi server!" });
+  }
+};
+
+exports.confirmReceived = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const id = req.params.orderId;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID đơn hàng không hợp lệ." });
+    }
+    const order = await Order.findOne({ _id: id, nguoi_dung_id: userId });
+    if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng." });
+    if (order.trang_thai_don !== "da_giao_hang") {
+      return res.status(400).json({
+        message: "Chỉ xác nhận khi đơn ở trạng thái đã giao hàng.",
+      });
+    }
+    order.trang_thai_don = "hoan_thanh";
+    await order.save();
+    res.json({ message: "Cảm ơn bạn đã xác nhận đã nhận hàng.", order });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi server!" });
+  }
+};
+
+exports.createOrderReview = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const id = req.params.orderId;
+    const { line_index, so_sao, noi_dung, tags } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID đơn hàng không hợp lệ." });
+    }
+    const idx = parseInt(line_index, 10);
+    if (Number.isNaN(idx) || idx < 0) {
+      return res.status(400).json({ message: "Dòng sản phẩm không hợp lệ." });
+    }
+    const star = Number(so_sao);
+    if (!star || star < 1 || star > 5) {
+      return res.status(400).json({ message: "Vui lòng chọn số sao từ 1 đến 5." });
+    }
+    const text = String(noi_dung || "").trim();
+    if (!text) {
+      return res.status(400).json({ message: "Vui lòng nhập nội dung đánh giá" });
+    }
+
+    const order = await Order.findOne({ _id: id, nguoi_dung_id: userId });
+    if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng." });
+    if (order.trang_thai_don !== "hoan_thanh") {
+      return res.status(400).json({
+        message: "Chỉ đánh giá khi đơn đã hoàn thành (đã xác nhận nhận hàng).",
+      });
+    }
+    const lines = order.chi_tiet || [];
+    if (idx >= lines.length) {
+      return res.status(400).json({ message: "Dòng sản phẩm không tồn tại." });
+    }
+
+    const dup = await Review.findOne({ don_hang_id: order._id, dong_index: idx });
+    if (dup) {
+      return res.status(400).json({ message: "Bạn đã đánh giá sản phẩm này trong đơn rồi." });
+    }
+
+    const line = lines[idx];
+    const tagArr = Array.isArray(tags) ? tags.filter((t) => typeof t === "string").slice(0, 8) : [];
+
+    const review = await Review.create({
+      san_pham_id: line.san_pham_id,
+      nguoi_dung_id: userId,
+      ho_ten: req.user.ho_va_ten || "Khách hàng",
+      so_sao: star,
+      noi_dung: text.slice(0, 1000),
+      don_hang_id: order._id,
+      dong_index: idx,
+      tags: tagArr,
+    });
+
+    await refreshProductRating(line.san_pham_id);
+
+    res.status(201).json({
+      message: "Cảm ơn bạn đã đánh giá sản phẩm thành công",
+      review,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Lỗi server!" });

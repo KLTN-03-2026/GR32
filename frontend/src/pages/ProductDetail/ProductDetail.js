@@ -27,25 +27,6 @@ function StarDisplay({ value = 0 }) {
   );
 }
 
-function StarInput({ value, onChange }) {
-  const [hover, setHover] = useState(0);
-  return (
-    <span className="star-input">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <span
-          key={s}
-          className={`si ${s <= (hover || value) ? "active" : ""}`}
-          onMouseEnter={() => setHover(s)}
-          onMouseLeave={() => setHover(0)}
-          onClick={() => onChange(s)}
-        >
-          ★
-        </span>
-      ))}
-    </span>
-  );
-}
-
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -60,11 +41,6 @@ export default function ProductDetail() {
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
-
-  const [reviewStar, setReviewStar] = useState(5);
-  const [reviewText, setReviewText] = useState("");
-  const [reviewMsg, setReviewMsg] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   const [actionMsg, setActionMsg] = useState({ text: "", type: "" });
   const [cartToast, setCartToast] = useState({ show: false, name: "", qty: 0 });
@@ -163,23 +139,6 @@ export default function ProductDetail() {
       flash(err.response?.data?.message || "Lỗi!", "warn");
     }
   };
-
-  const handleReview = async () => {
-    if (!user) return setReviewMsg("Vui lòng đăng nhập để đánh giá!");
-    if (!reviewText.trim()) return setReviewMsg("Vui lòng nhập nội dung đánh giá!");
-    try {
-      setSubmitting(true);
-      await axios.post(`${API}/products/review`, {
-        san_pham_id: product._id, nguoi_dung_id: user._id,
-        ho_ten: user.ho_va_ten, so_sao: reviewStar, noi_dung: reviewText.trim(),
-      });
-      setReviewMsg("Gửi đánh giá thành công!");
-      setReviewText(""); setReviewStar(5); fetchData();
-    } catch (err) { setReviewMsg(err.response?.data?.message || "Lỗi gửi đánh giá!"); }
-    finally { setSubmitting(false); }
-  };
-
-  const alreadyReviewed = user && reviews.some((r) => r.nguoi_dung_id === user._id);
 
   return (
     <>
@@ -373,6 +332,15 @@ export default function ProductDetail() {
                       <span className="rv-date">{new Date(r.ngay_tao).toLocaleDateString("vi-VN")}</span>
                     </div>
                     <p className="rv-content">{r.noi_dung}</p>
+                    {Array.isArray(r.tags) && r.tags.length > 0 && (
+                      <div className="rv-tags">
+                        {r.tags.map((t) => (
+                          <span key={t} className="rv-tag">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -380,26 +348,22 @@ export default function ProductDetail() {
               <p className="no-reviews">Chưa có đánh giá nào cho sản phẩm này.</p>
             )}
 
-            {/* VIẾT ĐÁNH GIÁ */}
-            {user && !alreadyReviewed && (
-              <div className="pd-write-review">
-                <h4>Viết đánh giá của bạn</h4>
-                <div className="wr-row">
-                  <StarInput value={reviewStar} onChange={setReviewStar} />
-                  <span className="wr-star-text">{reviewStar}</span>
-                </div>
-                <div className="wr-row">
-                  <input className="wr-input" type="text" placeholder="Nhập nội dung đánh giá..."
-                    value={reviewText} onChange={(e) => setReviewText(e.target.value)} />
-                  <button className="wr-submit" onClick={handleReview} disabled={submitting}>
-                    {submitting ? "Đang gửi..." : "Gửi đánh giá"}
-                  </button>
-                </div>
-                {reviewMsg && <p className="wr-msg">{reviewMsg}</p>}
-              </div>
+            <p className="pd-review-policy">
+              Đánh giá sản phẩm chỉ gửi được từ{" "}
+              <strong onClick={() => navigate("/orders")} className="pd-policy-link">
+                Quản lý đơn hàng
+              </strong>{" "}
+              sau khi đơn <strong>hoàn thành</strong> (bạn đã xác nhận nhận hàng). Mỗi sản phẩm trong đơn
+              được đánh giá một lần.
+            </p>
+            {!user && (
+              <p className="wr-msg">
+                <span className="wr-login-link" onClick={() => navigate("/login")}>
+                  Đăng nhập
+                </span>{" "}
+                để theo dõi đơn và đánh giá.
+              </p>
             )}
-            {user && alreadyReviewed && <p className="wr-msg success">Bạn đã đánh giá sản phẩm này.</p>}
-            {!user && <p className="wr-msg">Vui lòng <span className="wr-login-link" onClick={() => navigate("/login")}>đăng nhập</span> để viết đánh giá.</p>}
           </div>
         </div>
       </div>

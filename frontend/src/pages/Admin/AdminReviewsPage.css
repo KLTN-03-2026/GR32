@@ -1,0 +1,418 @@
+.arp-page {
+  max-width: 960px;
+  padding: 8px 0 48px;
+}
+
+.arp-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+}
+
+.arp-hint {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.arp-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+  .arp-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.arp-stat-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  border: 1px solid #e5e5e5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.arp-stat-label {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.arp-stat-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: #222;
+}
+
+.arp-stat-val--ok {
+  color: #1a7f37;
+}
+
+.arp-stat-val--warn {
+  color: #b45309;
+}
+
+.arp-stat-val--bad {
+  color: #c62828;
+}
+
+.arp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.arp-search-wrap {
+  display: flex;
+  flex: 1;
+  min-width: 220px;
+  max-width: 420px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.arp-input {
+  flex: 1;
+  border: none;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.arp-search-btn {
+  border: none;
+  background: #111;
+  color: #fff;
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.arp-search-btn:hover {
+  background: #333;
+}
+
+.arp-select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background: #fff;
+}
+
+.arp-star-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.arp-star-all {
+  border: 1px solid #333;
+  background: #111;
+  color: #fff;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.arp-star-all:not(.active) {
+  background: #fff;
+  color: #333;
+}
+
+.arp-star-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.arp-star-btn .arp-sym {
+  color: #e6a800;
+  font-size: 14px;
+}
+
+.arp-star-btn.active {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+.arp-star-btn.active .arp-sym {
+  color: #ffd54f;
+}
+
+.arp-msg {
+  padding: 10px 12px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.arp-err {
+  padding: 10px 12px;
+  background: #ffebee;
+  color: #b71c1c;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.arp-loading {
+  color: #666;
+}
+
+.arp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.arp-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.arp-card--dim {
+  opacity: 0.72;
+  background: #fafafa;
+}
+
+.arp-card-head {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.arp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #e3e3e3;
+  color: #444;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.arp-card-head-mid {
+  flex: 1;
+  min-width: 0;
+}
+
+.arp-card-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.arp-name {
+  font-weight: 600;
+  color: #222;
+}
+
+.arp-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.arp-badge--ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.arp-badge--muted {
+  background: #eee;
+  color: #555;
+}
+
+.arp-badge--order {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.arp-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.arp-link-prod {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #1565c0;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: inherit;
+}
+
+.arp-time {
+  color: #999;
+}
+
+.arp-stars {
+  display: inline-flex;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.arp-star {
+  color: #ddd;
+  font-size: 15px;
+}
+
+.arp-star.on {
+  color: #e6a800;
+}
+
+.arp-content {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #444;
+}
+
+.arp-reply-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.arp-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.arp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.arp-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #bbb;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.arp-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.arp-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.arp-btn--primary {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.arp-btn--primary:hover:not(:disabled) {
+  background: #333;
+}
+
+.arp-btn--danger {
+  border-color: #c62828;
+  color: #c62828;
+}
+
+.arp-btn--danger:hover:not(:disabled) {
+  background: #ffebee;
+}
+
+.arp-empty {
+  color: #888;
+  padding: 24px 0;
+}
+
+.arp-pager {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.arp-pager-info {
+  font-size: 13px;
+  color: #666;
+}
+
+.arp-pager-btns {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.arp-pager-btns button {
+  min-width: 36px;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.arp-pager-btns button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.arp-pager-cur {
+  font-size: 13px;
+  padding: 0 8px;
+  color: #333;
+}

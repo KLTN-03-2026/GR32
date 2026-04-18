@@ -12,6 +12,15 @@ const reviewSchema = new mongoose.Schema(
     don_hang_id: { type: mongoose.Schema.Types.ObjectId, ref: "Order", default: null, index: true },
     dong_index: { type: Number, min: 0, default: null },
     tags: [{ type: String }],
+    /** PB39: hiển thị công khai / ẩn / đã xóa mềm */
+    trang_thai: {
+      type: String,
+      enum: ["hien_thi", "an", "da_xoa"],
+      default: "hien_thi",
+      index: true,
+    },
+    phan_hoi_shop: { type: String, default: "" },
+    ngay_phan_hoi: { type: Date, default: null },
   },
   { collection: "danh_gia" }
 );

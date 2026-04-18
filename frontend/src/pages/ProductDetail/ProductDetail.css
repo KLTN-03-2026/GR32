@@ -254,6 +254,29 @@
 .rv-name { font-size: 14px; color: #333; }
 .rv-date { font-size: 12px; color: #bbb; margin-left: auto; }
 .rv-content { font-size: 14px; color: #555; line-height: 1.5; margin: 0 0 0 46px; }
+
+.rv-shop-reply {
+  margin: 10px 0 0 46px;
+  padding: 10px 12px;
+  background: #e3f2fd;
+  border-radius: 8px;
+  border-left: 3px solid #1565c0;
+}
+
+.rv-shop-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1565c0;
+  margin-bottom: 4px;
+}
+
+.rv-shop-reply p {
+  margin: 0;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+}
 .no-reviews { color: #aaa; font-size: 14px; text-align: center; padding: 20px; }
 
 /* Write Review */

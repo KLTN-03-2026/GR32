@@ -67,31 +67,58 @@ const AdminLayout = () => {
           <Link to="/admin-dashboard" className="sidebar-logo">
             {sidebarOpen ? "NO NAME" : "NN"}
           </Link>
-          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <i className={`fas fa-${sidebarOpen ? "chevron-left" : "chevron-right"}`}></i>
+          <button
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <i
+              className={`fas fa-${sidebarOpen ? "chevron-left" : "chevron-right"}`}
+            ></i>
           </button>
         </div>
 
         <nav className="sidebar-nav">
-          <Link to="/admin-dashboard" className={`sidebar-link ${navActive("/admin-dashboard") ? "active" : ""}`}>
+          <Link
+            to="/admin-dashboard"
+            className={`sidebar-link ${navActive("/admin-dashboard") ? "active" : ""}`}
+          >
             <i className="fas fa-tachometer-alt"></i>
             {sidebarOpen && <span>Tổng quan</span>}
           </Link>
-          <Link to="/admin-dashboard/products" className={`sidebar-link ${navActive("/admin-dashboard/products") ? "active" : ""}`}>
+          <Link
+            to="/admin-dashboard/products"
+            className={`sidebar-link ${navActive("/admin-dashboard/products") ? "active" : ""}`}
+          >
             <i className="fas fa-box"></i>
             {sidebarOpen && <span>Quản lý sản phẩm</span>}
           </Link>
-          <Link to="/admin-dashboard/orders" className={`sidebar-link ${navActive("/admin-dashboard/orders") ? "active" : ""}`}>
+          <Link
+            to="/admin-dashboard/orders"
+            className={`sidebar-link ${navActive("/admin-dashboard/orders") ? "active" : ""}`}
+          >
             <i className="fas fa-receipt"></i>
             {sidebarOpen && <span>Quản lý đơn hàng</span>}
           </Link>
-          <Link to="/admin-dashboard/payments" className={`sidebar-link ${navActive("/admin-dashboard/payments") ? "active" : ""}`}>
+          <Link
+            to="/admin-dashboard/reviews"
+            className={`sidebar-link ${navActive("/admin-dashboard/reviews") ? "active" : ""}`}
+          >
+            <i className="fas fa-comments"></i>
+            {sidebarOpen && <span>Quản lý đánh giá</span>}
+          </Link>
+          <Link
+            to="/admin-dashboard/payments"
+            className={`sidebar-link ${navActive("/admin-dashboard/payments") ? "active" : ""}`}
+          >
             <i className="fas fa-money-check-alt"></i>
             {sidebarOpen && <span>Quản lý thanh toán</span>}
           </Link>
-          <Link to="/admin-dashboard/users" className={`sidebar-link ${navActive("/admin-dashboard/users") ? "active" : ""}`}>
+          <Link
+            to="/admin-dashboard/users"
+            className={`sidebar-link ${navActive("/admin-dashboard/users") ? "active" : ""}`}
+          >
             <i className="fas fa-users"></i>
-            {sidebarOpen && <span>Khách hàng</span>}
+            {sidebarOpen && <span>Quản Lý Khách hàng</span>}
           </Link>
         </nav>
 
@@ -110,7 +137,9 @@ const AdminLayout = () => {
           <div className="admin-topbar-right">
             <span className="admin-user-name">
               <i className="fas fa-user-circle"></i> {user.ho_va_ten}
-              <small>({user.vai_tro === "admin" ? "Admin" : "Nhân viên"})</small>
+              <small>
+                ({user.vai_tro === "admin" ? "Admin" : "Nhân viên"})
+              </small>
             </span>
             <button className="admin-logout-btn" onClick={handleLogout}>
               <i className="fas fa-sign-out-alt"></i> Đăng xuất

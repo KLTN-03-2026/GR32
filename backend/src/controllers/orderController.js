@@ -322,7 +322,12 @@ const ORDER_STATUS_LIST = ["cho_xu_ly", "dang_giao", "da_giao_hang", "hoan_thanh
 async function refreshProductRating(sanPhamId) {
   const oid = new mongoose.Types.ObjectId(sanPhamId);
   const agg = await Review.aggregate([
-    { $match: { san_pham_id: oid } },
+    {
+      $match: {
+        san_pham_id: oid,
+        $nor: [{ trang_thai: "an" }, { trang_thai: "da_xoa" }],
+      },
+    },
     { $group: { _id: null, avg: { $avg: "$so_sao" }, count: { $sum: 1 } } },
   ]);
   const row = agg[0];
@@ -331,6 +336,8 @@ async function refreshProductRating(sanPhamId) {
     tong_danh_gia: row ? row.count : 0,
   });
 }
+
+exports.refreshProductRating = refreshProductRating;
 
 exports.myOrders = async (req, res) => {
   try {
@@ -399,7 +406,12 @@ exports.myOrderById = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Không tìm thấy đơn hàng." });
     }
-    const reviewedRows = await Review.find({ don_hang_id: order._id }).select("dong_index").lean();
+    const reviewedRows = await Review.find({
+      don_hang_id: order._id,
+      trang_thai: { $ne: "da_xoa" },
+    })
+      .select("dong_index")
+      .lean();
     const reviewedLineIndices = reviewedRows.map((r) => r.dong_index).filter((i) => typeof i === "number");
     res.json({ ...order, reviewedLineIndices });
   } catch (err) {
@@ -464,7 +476,11 @@ exports.createOrderReview = async (req, res) => {
       return res.status(400).json({ message: "Dòng sản phẩm không tồn tại." });
     }
 
-    const dup = await Review.findOne({ don_hang_id: order._id, dong_index: idx });
+    const dup = await Review.findOne({
+      don_hang_id: order._id,
+      dong_index: idx,
+      trang_thai: { $ne: "da_xoa" },
+    });
     if (dup) {
       return res.status(400).json({ message: "Bạn đã đánh giá sản phẩm này trong đơn rồi." });
     }
@@ -481,6 +497,7 @@ exports.createOrderReview = async (req, res) => {
       don_hang_id: order._id,
       dong_index: idx,
       tags: tagArr,
+      trang_thai: "hien_thi",
     });
 
     await refreshProductRating(line.san_pham_id);

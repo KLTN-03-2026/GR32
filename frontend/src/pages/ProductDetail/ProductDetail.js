@@ -332,6 +332,12 @@ export default function ProductDetail() {
                       <span className="rv-date">{new Date(r.ngay_tao).toLocaleDateString("vi-VN")}</span>
                     </div>
                     <p className="rv-content">{r.noi_dung}</p>
+                    {r.phan_hoi_shop && String(r.phan_hoi_shop).trim() !== "" && (
+                      <div className="rv-shop-reply">
+                        <span className="rv-shop-label">Phản hồi của shop</span>
+                        <p>{r.phan_hoi_shop}</p>
+                      </div>
+                    )}
                     {Array.isArray(r.tags) && r.tags.length > 0 && (
                       <div className="rv-tags">
                         {r.tags.map((t) => (

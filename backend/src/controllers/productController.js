@@ -7,7 +7,10 @@ exports.getProductById = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Sản phẩm không tồn tại!" });
 
-    const reviews = await Review.find({ san_pham_id: req.params.id })
+    const reviews = await Review.find({
+      san_pham_id: req.params.id,
+      $nor: [{ trang_thai: "an" }, { trang_thai: "da_xoa" }],
+    })
       .sort({ ngay_tao: -1 })
       .limit(20);
 

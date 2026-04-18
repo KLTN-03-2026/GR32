@@ -18,6 +18,7 @@ import AdminProductForm from "./pages/Admin/AdminProductForm";
 import AdminProducts from "./pages/Admin/AdminProducts";
 import AdminPaymentsPage from "./pages/Admin/AdminPaymentsPage";
 import AdminOrdersPage from "./pages/Admin/AdminOrdersPage";
+import AdminReviewsPage from "./pages/Admin/AdminReviewsPage";
 import CartPage from "./pages/Cart/CartPage";
 import CheckoutPage from "./pages/Checkout/CheckoutPage";
 import VnpaySandboxPage from "./pages/Payment/VnpaySandboxPage";
@@ -103,6 +104,7 @@ function App() {
           <Route path="products/edit/:id" element={<AdminProductForm />} />
           <Route path="payments" element={<AdminPaymentsPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="reviews" element={<AdminReviewsPage />} />
         </Route>
 
         {/* 6. 404 — không redirect về / (tránh che lỗi route, trông như “về trang chủ”) */}

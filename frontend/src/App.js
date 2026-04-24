@@ -22,6 +22,7 @@ import AdminReviewsPage from "./pages/Admin/AdminReviewsPage";
 import AdminCategoriesPage from "./pages/Admin/AdminCategoriesPage";
 import AdminBrandsPage from "./pages/Admin/AdminBrandsPage";
 import AdminAccountsPage from "./pages/Admin/AdminAccountsPage";
+import AdminCouponsPage from "./pages/Admin/AdminCouponsPage";
 import CartPage from "./pages/Cart/CartPage";
 import CheckoutPage from "./pages/Checkout/CheckoutPage";
 import VnpaySandboxPage from "./pages/Payment/VnpaySandboxPage";
@@ -110,6 +111,7 @@ function App() {
           <Route path="payments" element={<AdminPaymentsPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
+          <Route path="coupons" element={<AdminCouponsPage />} />
           <Route path="accounts" element={<AdminAccountsPage />} />
         </Route>
 

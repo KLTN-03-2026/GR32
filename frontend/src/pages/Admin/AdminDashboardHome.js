@@ -59,13 +59,6 @@ const AdminDashboardHome = () => {
           </div>
         </Link>
         <div className="stat-card">
-          <i className="fas fa-users"></i>
-          <div className="stat-info">
-            <span className="stat-value">—</span>
-            <span className="stat-label">Khách hàng</span>
-          </div>
-        </div>
-        <div className="stat-card">
           <i className="fas fa-robot"></i>
           <div className="stat-info">
             <span className="stat-value">AI</span>

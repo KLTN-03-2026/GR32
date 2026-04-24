@@ -9,6 +9,7 @@ import "./CheckoutPage.css";
 const API_AUTH = `${API_BASE}/api/auth`;
 const API_CART = `${API_BASE}/api/cart`;
 const API_ORDERS = `${API_BASE}/api/orders`;
+const API_COUPONS = `${API_BASE}/api/coupons`;
 
 const PHI_SHIP = 20000;
 
@@ -76,30 +77,53 @@ const CheckoutPage = () => {
 
   const [voucherInput, setVoucherInput] = useState("");
   const [maVoucher, setMaVoucher] = useState("");
+  const [giamGia, setGiamGia] = useState(0);
+  const [voucherMsg, setVoucherMsg] = useState("");
 
   const tamTinh = useMemo(
     () => items.reduce((s, it) => s + it.gia * it.so_luong, 0),
     [items],
   );
 
-  const { giamGia, phiShip, tongCong } = useMemo(() => {
+  const { phiShip, tongCong } = useMemo(() => {
     const ship = phuong_thuc_van_chuyen === "giao_tan_noi" ? PHI_SHIP : 0;
-    const rules = {
-      APR20: { min: 499000, discount: 20000 },
-      APR60: { min: 799000, discount: 60000 },
-      APR90: { min: 1299000, discount: 90000 },
-      APR150: { min: 1999000, discount: 150000 },
-    };
-    const key = (maVoucher || "").trim().toUpperCase();
-    const r = rules[key];
-    let giam = 0;
-    if (r && tamTinh >= r.min) giam = r.discount;
     return {
-      giamGia: giam,
       phiShip: ship,
-      tongCong: Math.max(0, tamTinh - giam + ship),
+      tongCong: Math.max(0, tamTinh - giamGia + ship),
     };
-  }, [tamTinh, maVoucher, phuong_thuc_van_chuyen]);
+  }, [tamTinh, giamGia, phuong_thuc_van_chuyen]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const code = (maVoucher || "").trim();
+    if (!code) {
+      setGiamGia(0);
+      setVoucherMsg("");
+      return undefined;
+    }
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    (async () => {
+      try {
+        const res = await axios.post(
+          `${API_COUPONS}/preview`,
+          { ma: code },
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (cancelled) return;
+        setGiamGia(Number(res.data.discount) || 0);
+        setVoucherMsg(res.data.message || "");
+      } catch {
+        if (!cancelled) {
+          setGiamGia(0);
+          setVoucherMsg("Không kiểm tra được mã. Vui lòng thử lại.");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [maVoucher, tamTinh, items]);
 
   const loadData = useCallback(async () => {
     const token = getToken();
@@ -542,9 +566,18 @@ const CheckoutPage = () => {
                   Áp dụng Voucher
                 </button>
               </div>
-              {maVoucher && (
+              {maVoucher.trim() && (
                 <p className="checkout-voucher-applied">
-                  Đang áp dụng mã: <strong>{maVoucher.toUpperCase()}</strong>
+                  Đang áp dụng mã: <strong>{maVoucher.trim().toUpperCase()}</strong>
+                  {voucherMsg ? (
+                    <span style={{ display: "block", marginTop: 6, color: "#b45309", fontWeight: 500 }}>
+                      {voucherMsg}
+                    </span>
+                  ) : giamGia > 0 ? (
+                    <span style={{ display: "block", marginTop: 6, color: "#166534", fontWeight: 500 }}>
+                      Mã hợp lệ — đã áp dụng giảm {formatPrice(giamGia)}đ
+                    </span>
+                  ) : null}
                 </p>
               )}
             </section>

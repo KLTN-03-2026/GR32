@@ -5,15 +5,9 @@ const Product = require("../models/Product");
 const Review = require("../models/Review");
 const { createPaymentUrl, verifyReturnQuery } = require("../utils/vnpay");
 const { generateMaGiaoDich } = require("../utils/orderCodes");
+const { computeCouponDiscount, incrementCouponUsageForOrder } = require("../services/couponService");
 
 const PHI_SHIP_GIAO_TAN_NOI = 20000;
-
-const VOUCHERS = {
-  APR20: { min: 499000, discount: 20000 },
-  APR60: { min: 799000, discount: 60000 },
-  APR90: { min: 1299000, discount: 90000 },
-  APR150: { min: 1999000, discount: 150000 },
-};
 
 function generateMaDon() {
   const t = Date.now().toString(36).toUpperCase();
@@ -23,14 +17,6 @@ function generateMaDon() {
 
 function calcTamTinh(lines) {
   return lines.reduce((s, it) => s + it.gia * it.so_luong, 0);
-}
-
-function applyVoucher(code, tamTinh) {
-  if (!code || typeof code !== "string") return { discount: 0, ma: "" };
-  const key = code.trim().toUpperCase();
-  const rule = VOUCHERS[key];
-  if (!rule || tamTinh < rule.min) return { discount: 0, ma: key };
-  return { discount: rule.discount, ma: key };
 }
 
 async function verifyCartStock(cart) {
@@ -131,7 +117,13 @@ exports.checkout = async (req, res) => {
 
     const chiTiet = snapshotLines(cart);
     const tamTinh = calcTamTinh(chiTiet);
-    const { discount, ma } = applyVoucher(ma_voucher, tamTinh);
+    const rawVoucher = String(ma_voucher || "").trim();
+    const vres = await computeCouponDiscount(cart, rawVoucher, tamTinh, { forCheckout: true });
+    if (rawVoucher && vres.error) {
+      return res.status(400).json({ message: vres.error });
+    }
+    const discount = vres.discount;
+    const ma = discount > 0 ? vres.ma : "";
     const tongCong = Math.max(0, tamTinh - discount + phiShip);
 
     const maDon = generateMaDon();
@@ -223,6 +215,8 @@ exports.checkout = async (req, res) => {
     await decrementStockFromLines(chiTiet);
     await clearCart(userId);
 
+    await incrementCouponUsageForOrder(order._id);
+
     return res.status(201).json({
       message: "Đặt hàng thành công!",
       order,
@@ -306,6 +300,8 @@ exports.vnpayReturn = async (req, res) => {
 
     await decrementStockFromLines(order.chi_tiet);
     await clearCart(order.nguoi_dung_id);
+
+    await incrementCouponUsageForOrder(order._id);
 
     order.trang_thai_thanh_toan = "da_thanh_toan";
     await order.save();
@@ -570,6 +566,8 @@ exports.vnpaySandboxComplete = async (req, res) => {
 
     await decrementStockFromLines(order.chi_tiet);
     await clearCart(userId);
+
+    await incrementCouponUsageForOrder(order._id);
 
     order.trang_thai_thanh_toan = "da_thanh_toan";
     order.vnpay_response_code = "00";

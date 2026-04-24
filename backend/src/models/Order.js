@@ -53,6 +53,8 @@ const orderSchema = new mongoose.Schema(
     giam_gia: { type: Number, default: 0 },
     tong_cong: { type: Number, required: true },
     ma_voucher: { type: String, default: "" },
+    /** Đã cộng lượt dùng mã giảm giá (tránh trùng khi VNPAY callback lặp) */
+    da_cong_ma_giam: { type: Boolean, default: false },
 
     vnpay_transaction_no: { type: String, default: "" },
     vnpay_response_code: { type: String, default: "" },

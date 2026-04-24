@@ -1,16 +1,18 @@
 import axios from "axios";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import API_BASE from "../../config";
 
 const API = `${API_BASE}/api/admin/products`;
 
-const DANH_MUC_LIST = [
+const DANH_MUC_FALLBACK = [
   "Áo thun nam", "Áo polo nam", "Quần jean nam", "Quần short nam",
   "Áo thun nữ", "Đầm / Váy", "Quần nữ", "Áo khoác nữ",
   "Mũ / Nón", "Túi xách", "Thắt lưng", "Giày dép",
   "Áo khoác nam", "Áo sơ mi nam", "Áo sơ mi nữ",
 ];
+
+const THUONG_HIEU_FALLBACK = ["NO NAME"];
 
 const MAU_SAC_LIST = ["Đen", "Trắng", "Xanh navy", "Xám", "Be", "Nâu", "Đỏ", "Hồng", "Xanh lá", "Kẻ caro"];
 const KICH_CO_LIST = ["S", "M", "L", "XL", "XXL", "29", "30", "31", "32", "33", "34"];
@@ -40,9 +42,71 @@ const AdminProductForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [categoryOptions, setCategoryOptions] = useState(() =>
+    DANH_MUC_FALLBACK.map((t) => ({ _id: t, ten_danh_muc: t })),
+  );
+  const [brandOptions, setBrandOptions] = useState(() =>
+    THUONG_HIEU_FALLBACK.map((t) => ({ _id: t, ten_thuong_hieu: t })),
+  );
 
   const token = localStorage.getItem("token");
   const headers = { Authorization: `Bearer ${token}` };
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    axios
+      .get(`${API_BASE}/api/admin/categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { limit: 500, page: 1 },
+      })
+      .then((res) => {
+        const items = res.data.items;
+        if (!cancelled && Array.isArray(items) && items.length > 0) {
+          setCategoryOptions(items.map((c) => ({ _id: c._id, ten_danh_muc: c.ten_danh_muc })));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    axios
+      .get(`${API_BASE}/api/admin/brands`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { limit: 500, page: 1 },
+      })
+      .then((res) => {
+        const items = res.data.items;
+        if (!cancelled && Array.isArray(items) && items.length > 0) {
+          setBrandOptions(items.map((b) => ({ _id: b._id, ten_thuong_hieu: b.ten_thuong_hieu })));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const danhMucSelectOptions = useMemo(() => {
+    const has = categoryOptions.some((c) => c.ten_danh_muc === form.danh_muc);
+    if (!has && form.danh_muc) {
+      return [{ _id: `legacy-${form.danh_muc}`, ten_danh_muc: form.danh_muc }, ...categoryOptions];
+    }
+    return categoryOptions;
+  }, [categoryOptions, form.danh_muc]);
+
+  const thuongHieuSelectOptions = useMemo(() => {
+    const has = brandOptions.some((b) => b.ten_thuong_hieu === form.thuong_hieu);
+    if (!has && form.thuong_hieu) {
+      return [{ _id: `legacy-${form.thuong_hieu}`, ten_thuong_hieu: form.thuong_hieu }, ...brandOptions];
+    }
+    return brandOptions;
+  }, [brandOptions, form.thuong_hieu]);
 
   const loadProduct = useCallback(async () => {
     if (!id) return;
@@ -260,13 +324,24 @@ const AdminProductForm = () => {
           <div className="apf-row three-cols">
             <div className="apf-field">
               <label>Thương hiệu <span className="required">*</span></label>
-              <input type="text" value={form.thuong_hieu} onChange={(e) => handleChange("thuong_hieu", e.target.value)} placeholder="VD: NO NAME" />
+              <select value={form.thuong_hieu} onChange={(e) => handleChange("thuong_hieu", e.target.value)}>
+                <option value="">-- Chọn thương hiệu --</option>
+                {thuongHieuSelectOptions.map((b) => (
+                  <option key={b._id} value={b.ten_thuong_hieu}>
+                    {b.ten_thuong_hieu}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="apf-field">
               <label>Danh mục <span className="required">*</span></label>
               <select value={form.danh_muc} onChange={(e) => handleChange("danh_muc", e.target.value)}>
                 <option value="">-- Chọn danh mục --</option>
-                {DANH_MUC_LIST.map((dm) => <option key={dm} value={dm}>{dm}</option>)}
+                {danhMucSelectOptions.map((c) => (
+                  <option key={c._id} value={c.ten_danh_muc}>
+                    {c.ten_danh_muc}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="apf-field">

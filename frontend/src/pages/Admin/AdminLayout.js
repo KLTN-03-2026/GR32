@@ -93,6 +93,20 @@ const AdminLayout = () => {
             {sidebarOpen && <span>Quản lý sản phẩm</span>}
           </Link>
           <Link
+            to="/admin-dashboard/categories"
+            className={`sidebar-link ${navActive("/admin-dashboard/categories") ? "active" : ""}`}
+          >
+            <i className="fas fa-folder-open"></i>
+            {sidebarOpen && <span>Quản lý danh mục</span>}
+          </Link>
+          <Link
+            to="/admin-dashboard/brands"
+            className={`sidebar-link ${navActive("/admin-dashboard/brands") ? "active" : ""}`}
+          >
+            <i className="fas fa-copyright"></i>
+            {sidebarOpen && <span>Quản lý thương hiệu</span>}
+          </Link>
+          <Link
             to="/admin-dashboard/orders"
             className={`sidebar-link ${navActive("/admin-dashboard/orders") ? "active" : ""}`}
           >
@@ -113,6 +127,15 @@ const AdminLayout = () => {
             <i className="fas fa-money-check-alt"></i>
             {sidebarOpen && <span>Quản lý thanh toán</span>}
           </Link>
+          {user.vai_tro === "admin" && (
+            <Link
+              to="/admin-dashboard/accounts"
+              className={`sidebar-link ${navActive("/admin-dashboard/accounts") ? "active" : ""}`}
+            >
+              <i className="fas fa-user-cog"></i>
+              {sidebarOpen && <span>Quản lý tài khoản</span>}
+            </Link>
+          )}
           <Link
             to="/admin-dashboard/users"
             className={`sidebar-link ${navActive("/admin-dashboard/users") ? "active" : ""}`}

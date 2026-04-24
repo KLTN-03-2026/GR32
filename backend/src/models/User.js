@@ -17,6 +17,13 @@ const userSchema = new mongoose.Schema(
     // Phân quyền hệ thống
     vai_tro: { type: String, default: "khach_hang" }, // khach_hang, nhan_vien, admin
 
+    /** US18: hoạt động / vô hiệu (đăng nhập bị chặn khi vo_hieu) */
+    trang_thai: {
+      type: String,
+      enum: ["hoat_dong", "vo_hieu"],
+      default: "hoat_dong",
+    },
+
     // Cấu trúc Quên mật khẩu (US03/PB03) - ĐÃ ĐỒNG BỘ TÊN TRƯỜNG
     resetPasswordToken: { type: String },
     resetPasswordExpire: { type: Date },

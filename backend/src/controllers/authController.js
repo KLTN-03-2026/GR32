@@ -115,6 +115,10 @@ exports.login = async (req, res) => {
         .json({ message: "Tài khoản chưa được kích hoạt! Vui lòng kiểm tra email." });
     }
 
+    if (user.trang_thai === "vo_hieu") {
+      return res.status(403).json({ message: "Tài khoản đã bị vô hiệu hóa." });
+    }
+
     const token = jwt.sign(
       { id: user._id, vai_tro: user.vai_tro },
       process.env.JWT_SECRET,

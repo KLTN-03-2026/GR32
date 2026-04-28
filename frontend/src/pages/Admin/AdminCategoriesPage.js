@@ -146,6 +146,28 @@ const AdminCategoriesPage = () => {
     }
   };
 
+  const repairTree = async () => {
+    const ok = window.confirm(
+      "Gán lại cha cho các danh mục con chuẩn (Nam/Nữ/Phụ kiện): ví dụ Giày dép → Phụ kiện, không nằm dưới Quần. Tiếp tục?",
+    );
+    if (!ok) return;
+    setMsg("");
+    try {
+      const res = await axios.post(`${API}/repair-tree`, {}, { headers: authHeader() });
+      const parts = [res.data.message];
+      if (res.data.updates?.length) parts.push(`Đã sửa: ${res.data.updates.join("; ")}`);
+      if (res.data.skipped?.length) {
+        parts.push(
+          `Bỏ qua: ${res.data.skipped.map((s) => (typeof s === "string" ? s : JSON.stringify(s))).join("; ")}`,
+        );
+      }
+      setMsg(parts.join(" "));
+      await fetchList();
+    } catch (e) {
+      setMsg(e.response?.data?.message || "Không chạy được sửa cây danh mục.");
+    }
+  };
+
   const handleDelete = async (row) => {
     const ok = window.confirm("Bạn có chắc chắn muốn xóa danh mục khỏi hệ thống?");
     if (!ok) return;
@@ -164,11 +186,20 @@ const AdminCategoriesPage = () => {
       <div className="acp-head">
         <div>
           <h2 className="acp-title">Quản lý danh mục</h2>
-          <p className="acp-sub">Thêm, sửa, xóa danh mục sản phẩm (Admin / Nhân viên).</p>
+          <p className="acp-sub">
+            Thêm, sửa, xóa danh mục. Cây trên trang sản phẩm lấy theo <strong>parent_id</strong> — nếu con bị gán nhầm cha
+            (vd. Giày dép dưới Quần), bấm <strong>Sửa cây chuẩn</strong> sau khi đã có 3 danh mục gốc Nam/Nữ/Phụ kiện
+            (slug <code>thoi-trang-nam</code>, <code>thoi-trang-nu</code>, <code>phu-kien</code>).
+          </p>
         </div>
-        <button type="button" className="acp-btn-add" onClick={openAdd}>
-          + Thêm danh mục
-        </button>
+        <div className="acp-head-actions">
+          <button type="button" className="acp-btn acp-btn--outline" onClick={repairTree}>
+            Sửa cây chuẩn (Nam / Nữ / Phụ kiện)
+          </button>
+          <button type="button" className="acp-btn-add" onClick={openAdd}>
+            + Thêm danh mục
+          </button>
+        </div>
       </div>
 
       <form className="acp-toolbar" onSubmit={applySearch}>

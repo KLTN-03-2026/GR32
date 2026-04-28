@@ -204,6 +204,42 @@
   color: #444;
 }
 
+.my-orders-inline-toast {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  background: #e3f2fd;
+  color: #0d47a1;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.my-orders-actions-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.my-orders-cancel-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #c62828;
+  background: #fff;
+  border: 1px solid #c62828;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.my-orders-cancel-btn:hover:not(:disabled) {
+  background: #ffebee;
+}
+
+.my-orders-cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .my-orders-pager {
   display: flex;
   align-items: center;

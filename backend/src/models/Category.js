@@ -12,6 +12,10 @@ const categorySchema = new mongoose.Schema(
       default: "hoat_dong",
       index: true,
     },
+    /** null = danh mục gốc; có giá trị = con của danh mục đó */
+    parent_id: { type: mongoose.Schema.Types.ObjectId, ref: "Category", default: null, index: true },
+    thu_tu_menu: { type: Number, default: 999, index: true },
+    hien_thi_tren_menu: { type: Boolean, default: true },
     ngay_tao: { type: Date, default: Date.now },
   },
   { collection: "danh_muc" }

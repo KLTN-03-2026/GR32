@@ -5,7 +5,11 @@ const Product = require("../models/Product");
 const Review = require("../models/Review");
 const { createPaymentUrl, verifyReturnQuery } = require("../utils/vnpay");
 const { generateMaGiaoDich } = require("../utils/orderCodes");
-const { computeCouponDiscount, incrementCouponUsageForOrder } = require("../services/couponService");
+const {
+  computeCouponDiscount,
+  incrementCouponUsageForOrder,
+  decrementCouponUsageForOrder,
+} = require("../services/couponService");
 
 const PHI_SHIP_GIAO_TAN_NOI = 20000;
 
@@ -54,6 +58,27 @@ async function decrementStockFromLines(lines) {
       product.so_luong_ton = Math.max(0, (product.so_luong_ton || 0) - item.so_luong);
     }
     product.so_luong_da_ban = (product.so_luong_da_ban || 0) + item.so_luong;
+    await product.save();
+  }
+}
+
+/** Hoàn tồn kho khi hủy đơn (đảo ngược decrementStockFromLines). */
+async function incrementStockFromLines(lines) {
+  for (const item of lines || []) {
+    const product = await Product.findById(item.san_pham_id);
+    if (!product) continue;
+    if (product.bien_the && product.bien_the.length > 0) {
+      const idx = product.bien_the.findIndex(
+        (b) => b.mau_sac === (item.mau_sac || "") && b.kich_co === (item.kich_co || "")
+      );
+      if (idx >= 0) {
+        product.bien_the[idx].so_luong += item.so_luong;
+      }
+      product.markModified("bien_the");
+    } else {
+      product.so_luong_ton = (product.so_luong_ton || 0) + item.so_luong;
+    }
+    product.so_luong_da_ban = Math.max(0, (product.so_luong_da_ban || 0) - item.so_luong);
     await product.save();
   }
 }
@@ -410,6 +435,52 @@ exports.myOrderById = async (req, res) => {
       .lean();
     const reviewedLineIndices = reviewedRows.map((r) => r.dong_index).filter((i) => typeof i === "number");
     res.json({ ...order, reviewedLineIndices });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi server!" });
+  }
+};
+
+/** Khách hủy đơn: chỉ khi chờ xử lý; hoàn kho nếu đã trừ tồn; trả lượt mã giảm giá nếu có. */
+exports.cancelMyOrder = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const id = req.params.orderId;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID đơn hàng không hợp lệ." });
+    }
+    const order = await Order.findOne({ _id: id, nguoi_dung_id: userId });
+    if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng." });
+    if (order.trang_thai_don === "huy") {
+      return res.status(400).json({ message: "Đơn đã được hủy trước đó." });
+    }
+    if (order.trang_thai_don !== "cho_xu_ly") {
+      return res.status(400).json({
+        message: "Chỉ có thể hủy khi đơn đang chờ xử lý (shop chưa giao hàng).",
+      });
+    }
+
+    const paid = order.trang_thai_thanh_toan === "da_thanh_toan";
+    const stockWasReserved =
+      order.hinh_thuc_thanh_toan !== "vnpay" || paid;
+
+    if (stockWasReserved) {
+      await incrementStockFromLines(order.chi_tiet || []);
+    }
+
+    await decrementCouponUsageForOrder(order._id);
+    order.da_cong_ma_giam = false;
+
+    order.trang_thai_don = "huy";
+    order.trang_thai_thanh_toan = paid ? "hoan_tien" : "that_bai";
+    await order.save();
+
+    res.json({
+      message: paid
+        ? "Đã hủy đơn. Bạn đã thanh toán online — cửa hàng sẽ liên hệ xử lý hoàn tiền (nếu áp dụng)."
+        : "Đã hủy đơn hàng.",
+      order,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Lỗi server!" });

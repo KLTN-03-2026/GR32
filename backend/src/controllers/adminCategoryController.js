@@ -1,6 +1,51 @@
 const Category = require("../models/Category");
 const Product = require("../models/Product");
 
+/** Slug danh mục con → slug cha chuẩn (khớp menu / trang danh mục khách). */
+const CANONICAL_CHILD_PARENT_SLUG = {
+  "ao-thun-nam": "thoi-trang-nam",
+  "ao-polo-nam": "thoi-trang-nam",
+  "quan-jean-nam": "thoi-trang-nam",
+  "quan-short-nam": "thoi-trang-nam",
+  "ao-thun-nu": "thoi-trang-nu",
+  "dam-vay": "thoi-trang-nu",
+  "quan-nu": "thoi-trang-nu",
+  "ao-khoac-nu": "thoi-trang-nu",
+  "mu-non": "phu-kien",
+  "tui-xach": "phu-kien",
+  "that-lung": "phu-kien",
+  "giay-dep": "phu-kien",
+};
+
+/** Tên danh mục (trùng Product.danh_muc) → slug cha chuẩn — bắt cả lỗi đánh máy thường gặp. */
+const CANONICAL_TEN_TO_PARENT_SLUG = {
+  "Áo thun nam": "thoi-trang-nam",
+  "Áo polo nam": "thoi-trang-nam",
+  "Quần jean nam": "thoi-trang-nam",
+  "Quần short nam": "thoi-trang-nam",
+  "Áo thun nữ": "thoi-trang-nu",
+  "Đầm / Váy": "thoi-trang-nu",
+  "Quần nữ": "thoi-trang-nu",
+  "Áo khoác nữ": "thoi-trang-nu",
+  "Mũ / Nón": "phu-kien",
+  "Túi xách": "phu-kien",
+  "Thắt lưng": "phu-kien",
+  "Giày dép": "phu-kien",
+  "Giầy dép": "phu-kien",
+};
+
+async function wouldCreateCycle(categoryId, newParentId) {
+  if (!newParentId || !categoryId) return false;
+  let cur = newParentId;
+  for (let i = 0; i < 50; i += 1) {
+    if (String(cur) === String(categoryId)) return true;
+    const row = await Category.findById(cur).select("parent_id").lean();
+    if (!row || !row.parent_id) break;
+    cur = row.parent_id;
+  }
+  return false;
+}
+
 function slugify(str) {
   const s = String(str || "")
     .normalize("NFD")
@@ -60,6 +105,72 @@ async function bootstrapFromProducts() {
     }
   }
 }
+
+/**
+ * Gán lại parent_id cho các danh mục con theo bảng chuẩn (vd. giày dép → Phụ kiện, không nằm dưới Quần).
+ * Gọi một lần sau khi dữ liệu bị lệch (bootstrap tay / import sai).
+ */
+exports.repairCategoryTree = async (req, res) => {
+  try {
+    const parents = await Category.find({
+      slug: { $in: ["thoi-trang-nam", "thoi-trang-nu", "phu-kien"] },
+      trang_thai: "hoat_dong",
+    })
+      .select("_id slug")
+      .lean();
+    const parentIdBySlug = {};
+    for (const p of parents) {
+      parentIdBySlug[p.slug] = p._id;
+    }
+
+    const updates = [];
+    const skipped = [];
+
+    const applyParent = async (childId, parentSlug, label) => {
+      const parentId = parentIdBySlug[parentSlug];
+      if (!parentId) {
+        skipped.push({ label, reason: `Thiếu danh mục cha slug=${parentSlug} (bấm tạo 3 cha hoặc tạo tay).` });
+        return;
+      }
+      const doc = await Category.findById(childId);
+      if (!doc) return;
+      if (String(doc.parent_id || "") === String(parentId)) return;
+      if (await wouldCreateCycle(doc._id, parentId)) {
+        skipped.push({ ten: doc.ten_danh_muc, reason: "Tránh vòng cha–con" });
+        return;
+      }
+      doc.parent_id = parentId;
+      await doc.save();
+      updates.push(`${doc.ten_danh_muc} (${doc.slug}) → cha ${parentSlug}`);
+    };
+
+    const all = await Category.find({ trang_thai: "hoat_dong" }).select("_id slug ten_danh_muc").lean();
+
+    for (const [childSlug, parentSlug] of Object.entries(CANONICAL_CHILD_PARENT_SLUG)) {
+      const row = all.find((c) => c.slug === childSlug);
+      if (!row) continue;
+      await applyParent(row._id, parentSlug, childSlug);
+    }
+
+    for (const [ten, parentSlug] of Object.entries(CANONICAL_TEN_TO_PARENT_SLUG)) {
+      const row = all.find((c) => c.ten_danh_muc === ten);
+      if (!row) continue;
+      await applyParent(row._id, parentSlug, ten);
+    }
+
+    res.json({
+      message:
+        updates.length > 0
+          ? `Đã chỉnh ${updates.length} danh mục con về đúng nhóm cha (Nam / Nữ / Phụ kiện).`
+          : "Cây danh mục đã khớp chuẩn hoặc chưa có slug con tương ứng.",
+      updates,
+      skipped,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Không sửa được cây danh mục." });
+  }
+};
 
 exports.listCategories = async (req, res) => {
   try {
@@ -228,13 +339,31 @@ exports.deleteCategory = async (req, res) => {
     const doc = await Category.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: "Không tìm thấy danh mục." });
 
-    const count = await Product.countDocuments({ danh_muc: doc.ten_danh_muc });
-    if (count > 0) {
-      return res.status(400).json({ message: "Không thể xóa danh mục này" });
+    const con = await Category.countDocuments({ parent_id: doc._id });
+    if (con > 0) {
+      return res.status(400).json({
+        message:
+          "Không thể xóa danh mục còn danh mục con. Hãy xóa hoặc chuyển các danh mục con trước.",
+      });
     }
 
+    const dangBan = await Product.countDocuments({
+      danh_muc: doc.ten_danh_muc,
+      trang_thai: "dang_ban",
+    });
+    if (dangBan > 0) {
+      return res.status(400).json({
+        message: `Không thể xóa: còn ${dangBan} sản phẩm đang bán gắn "${doc.ten_danh_muc}". Ngừng bán hoặc đổi danh mục sản phẩm rồi thử lại.`,
+      });
+    }
+
+    await Product.updateMany({ danh_muc: doc.ten_danh_muc }, { $unset: { danh_muc: "" } });
+
     await Category.deleteOne({ _id: doc._id });
-    res.json({ message: "Đã xóa danh mục." });
+    res.json({
+      message:
+        "Đã xóa danh mục. Các sản phẩm chỉ còn trạng thái ngừng bán (hoặc không đang bán) đã được gỡ liên kết khỏi danh mục này.",
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Lỗi xóa danh mục." });

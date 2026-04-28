@@ -169,6 +169,50 @@
   font-size: 14px;
 }
 
+.order-detail-toast--err {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.od-cancel-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  background: #fce4ec;
+  border: 1px solid #f48fb1;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.od-cancel-banner p {
+  margin: 0;
+  flex: 1;
+  min-width: 200px;
+  color: #880e4f;
+  font-size: 14px;
+}
+
+.od-btn-cancel {
+  padding: 10px 20px;
+  background: #c62828;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.od-btn-cancel:hover:not(:disabled) {
+  background: #b71c1c;
+}
+
+.od-btn-cancel:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .od-confirm-banner {
   display: flex;
   flex-wrap: wrap;

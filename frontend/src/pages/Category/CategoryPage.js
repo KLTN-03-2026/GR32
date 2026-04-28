@@ -42,7 +42,7 @@ const CategoryPage = () => {
   const fetchProducts = async () => {
     if (!category) return;
     try {
-      let url = `${API_URL}?page=${page}&sap_xep=${sortBy}&danh_muc=${encodeURIComponent(category.dbValue)}`;
+      let url = `${API_URL}?page=${page}&sap_xep=${sortBy}&danh_muc_slug=${encodeURIComponent(slug)}`;
       if (selectedSizes.length) url += `&kich_co=${selectedSizes.join(",")}`;
       if (selectedColors.length) url += `&mau_sac=${selectedColors.join(",")}`;
 

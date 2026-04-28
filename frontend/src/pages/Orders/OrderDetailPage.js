@@ -40,7 +40,9 @@ const OrderDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [confirmBusy, setConfirmBusy] = useState(false);
+  const [cancelBusy, setCancelBusy] = useState(false);
   const [toast, setToast] = useState("");
+  const [toastOk, setToastOk] = useState(true);
 
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewLineIndex, setReviewLineIndex] = useState(null);
@@ -89,12 +91,40 @@ const OrderDetailPage = () => {
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       );
+      setToastOk(true);
       setToast(res.data.message || "Đã xác nhận.");
       await loadOrder();
     } catch (err) {
+      setToastOk(false);
       setToast(err.response?.data?.message || "Không xác nhận được.");
     } finally {
       setConfirmBusy(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    const ok = window.confirm(
+      "Bạn chắc chắn muốn hủy đơn hàng này? Thao tác không hoàn tác (trừ khi đặt đơn mới).",
+    );
+    if (!ok) return;
+    const token = getToken();
+    if (!token) return;
+    setCancelBusy(true);
+    setToast("");
+    try {
+      const res = await axios.post(
+        `${API}/${orderId}/cancel`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setToastOk(true);
+      setToast(res.data.message || "Đã hủy đơn.");
+      await loadOrder();
+    } catch (err) {
+      setToastOk(false);
+      setToast(err.response?.data?.message || "Không hủy được đơn.");
+    } finally {
+      setCancelBusy(false);
     }
   };
 
@@ -112,11 +142,13 @@ const OrderDetailPage = () => {
       const res = await axios.post(`${API}/${orderId}/reviews`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      setToastOk(true);
       setToast(res.data.message || "Đã gửi đánh giá.");
       setReviewOpen(false);
       setReviewLineIndex(null);
       await loadOrder();
     } catch (err) {
+      setToastOk(false);
       setToast(err.response?.data?.message || "Gửi đánh giá thất bại.");
     } finally {
       setReviewSubmitting(false);
@@ -139,7 +171,9 @@ const OrderDetailPage = () => {
             ← Quay lại danh sách đơn
           </Link>
 
-          {toast && <div className="order-detail-toast">{toast}</div>}
+          {toast && (
+            <div className={`order-detail-toast ${toastOk ? "" : "order-detail-toast--err"}`}>{toast}</div>
+          )}
 
           {loading && <p className="order-detail-loading">Đang tải...</p>}
           {error && !loading && <p className="order-detail-error">{error}</p>}
@@ -150,6 +184,25 @@ const OrderDetailPage = () => {
                 <h1>Chi tiết đơn #{order.ma_don}</h1>
                 <p className="order-detail-meta">Đặt lúc: {formatDateTime(order.createdAt)}</p>
               </div>
+
+              {order.trang_thai_don === "cho_xu_ly" && (
+                <div className="od-cancel-banner">
+                  <p>
+                    Đơn đang chờ xử lý. Bạn có thể hủy nếu đổi ý
+                    {order.trang_thai_thanh_toan === "da_thanh_toan"
+                      ? " (đã thanh toán online: cửa hàng sẽ liên hệ hoàn tiền nếu áp dụng)."
+                      : "."}
+                  </p>
+                  <button
+                    type="button"
+                    className="od-btn-cancel"
+                    onClick={handleCancelOrder}
+                    disabled={cancelBusy}
+                  >
+                    {cancelBusy ? "Đang hủy..." : "Hủy đơn hàng"}
+                  </button>
+                </div>
+              )}
 
               {order.trang_thai_don === "da_giao_hang" && (
                 <div className="od-confirm-banner">

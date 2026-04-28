@@ -21,6 +21,7 @@ const emptyForm = {
   ten_san_pham: "", mo_ta: "", thuong_hieu: "", danh_muc: "",
   gioi_tinh: "Unisex", chat_lieu: "", kieu_dang: "", huong_dan_bao_quan: "",
   gia_goc: "", phan_tram_giam_gia: "0",
+  trang_thai: "dang_ban",
 };
 
 const AdminProductForm = () => {
@@ -125,6 +126,7 @@ const AdminProductForm = () => {
         huong_dan_bao_quan: p.huong_dan_bao_quan || "",
         gia_goc: p.gia_goc || "",
         phan_tram_giam_gia: p.phan_tram_giam_gia || "0",
+        trang_thai: p.trang_thai === "ngung_ban" ? "ngung_ban" : "dang_ban",
       });
 
       if (p.hinh_anh) {
@@ -353,6 +355,21 @@ const AdminProductForm = () => {
               </select>
             </div>
           </div>
+
+          {isEdit && (
+            <div className="apf-row">
+              <div className="apf-field full">
+                <label>Trạng thái bán hàng</label>
+                <select value={form.trang_thai} onChange={(e) => handleChange("trang_thai", e.target.value)}>
+                  <option value="dang_ban">Đang bán (hiển thị cho khách)</option>
+                  <option value="ngung_ban">Ngừng bán (ẩn khỏi shop; vẫn lưu trong CSDL)</option>
+                </select>
+                <p className="apf-hint">
+                  Có thể chuyển qua lại bất cứ lúc nào. Để xóa hẳn bản ghi khỏi CSDL, dùng nút &quot;Xóa CSDL&quot; ở danh sách sản phẩm.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="apf-row">
             <div className="apf-field full">

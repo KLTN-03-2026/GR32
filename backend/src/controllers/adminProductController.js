@@ -1,5 +1,6 @@
 const Product = require("../models/Product");
 const Cart = require("../models/Cart");
+const Review = require("../models/Review");
 const fs = require("fs");
 const path = require("path");
 
@@ -41,6 +42,29 @@ exports.getById = async (req, res) => {
     if (!product) return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
     res.status(200).json(product);
   } catch (err) {
+    res.status(500).json({ message: "Lỗi server!" });
+  }
+};
+
+/** Chỉ đổi trạng thái kinh doanh (không xóa bản ghi). */
+exports.setTrangThai = async (req, res) => {
+  try {
+    const st = String(req.body.trang_thai || "").trim();
+    if (!["dang_ban", "ngung_ban"].includes(st)) {
+      return res.status(400).json({ message: "Trạng thái không hợp lệ (chỉ dang_ban hoặc ngung_ban)." });
+    }
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { $set: { trang_thai: st } },
+      { new: true },
+    ).select("ten_san_pham trang_thai");
+    if (!product) return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
+    res.json({
+      message: st === "dang_ban" ? "Đã mở bán lại." : "Đã chuyển sang ngừng bán (vẫn lưu trong CSDL).",
+      product,
+    });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Lỗi server!" });
   }
 };
@@ -159,7 +183,7 @@ exports.update = async (req, res) => {
     const {
       ten_san_pham, mo_ta, thuong_hieu, danh_muc, gioi_tinh,
       chat_lieu, kieu_dang, huong_dan_bao_quan,
-      gia_goc, phan_tram_giam_gia, bien_the, giu_anh_cu,
+      gia_goc, phan_tram_giam_gia, bien_the, giu_anh_cu, trang_thai: trangThaiBody,
     } = data;
 
     if (!ten_san_pham || !mo_ta || !thuong_hieu || !danh_muc) {
@@ -193,8 +217,9 @@ exports.update = async (req, res) => {
     product.kieu_dang = kieu_dang;
     product.huong_dan_bao_quan = huong_dan_bao_quan;
 
-    const validTrangThai = ["dang_ban", "ngung_ban"];
-    if (!validTrangThai.includes(product.trang_thai)) {
+    if (trangThaiBody === "dang_ban" || trangThaiBody === "ngung_ban") {
+      product.trang_thai = trangThaiBody;
+    } else if (!["dang_ban", "ngung_ban"].includes(product.trang_thai)) {
       product.trang_thai = "dang_ban";
     }
 
@@ -240,27 +265,23 @@ exports.update = async (req, res) => {
   }
 };
 
+/** Xóa bản ghi sản phẩm khỏi CSDL (khác với chỉ chuyển sang ngừng bán). */
 exports.remove = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
 
-    if (product.so_luong_da_ban > 0) {
-      product.trang_thai = "ngung_ban";
-      await product.save();
-      return res.status(200).json({
-        message: "Sản phẩm đã phát sinh giao dịch. Đã chuyển sang trạng thái Ngừng kinh doanh.",
-        switched: true,
-      });
-    }
-
     deleteFile(product.hinh_anh);
     (product.danh_sach_anh || []).forEach(deleteFile);
 
+    await Review.deleteMany({ san_pham_id: req.params.id });
     await Product.findByIdAndDelete(req.params.id);
     await Cart.updateMany({}, { $pull: { san_pham: { san_pham_id: req.params.id } } });
 
-    res.status(200).json({ message: "Đã xóa sản phẩm vĩnh viễn!" });
+    res.status(200).json({
+      message:
+        "Đã xóa sản phẩm khỏi cơ sở dữ liệu. Đơn hàng cũ vẫn giữ tên đã lưu trong chi tiết đơn.",
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Lỗi server!" });

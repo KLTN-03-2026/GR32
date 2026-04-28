@@ -5,6 +5,9 @@ const productController = require("../controllers/productController");
 // Route lấy tất cả sản phẩm (PB05)
 router.get("/", productController.getAllProducts);
 
+// Giá trị kích cỡ / màu thực tế từ biến thể (phải đặt trước /:id)
+router.get("/filter-facets", productController.getProductFilterFacets);
+
 // Route tìm kiếm sản phẩm (PB04)
 router.get("/search", productController.searchProducts);
 

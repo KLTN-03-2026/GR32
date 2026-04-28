@@ -1,17 +1,75 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
 import "./ProductsPage.css";
 
-const API_URL = `${API_BASE}/api/products`;
+const API_PRODUCTS = `${API_BASE}/api/products`;
+const API_CATEGORIES = `${API_BASE}/api/categories`;
 
-const CATEGORIES = ["Trang phục nam", "Trang phục nữ"];
-const SIZES = ["S", "M", "L", "XL"];
-const COLORS_DEFAULT = ["Trắng", "Đen", "Hồng", "Xanh"];
-const COLORS_EXTRA = ["Nâu", "Xám", "Đỏ", "Vàng"];
+function sortMenu(a, b) {
+  const oa = Number(a.thu_tu_menu);
+  const ob = Number(b.thu_tu_menu);
+  const na = Number.isFinite(oa) ? oa : 999;
+  const nb = Number.isFinite(ob) ? ob : 999;
+  if (na !== nb) return na - nb;
+  return (a.ten_danh_muc || "").localeCompare(b.ten_danh_muc || "", "vi");
+}
+
+/** Cây danh mục từ API /api/categories (parent_id + slug khớp CSDL). */
+function useCategoryTree(categories) {
+  return useMemo(() => {
+    const list = [...categories].sort(sortMenu);
+    const roots = list.filter((c) => !c.parent_id);
+    const byParent = new Map();
+    for (const c of list) {
+      if (!c.parent_id) continue;
+      const k = String(c.parent_id);
+      if (!byParent.has(k)) byParent.set(k, []);
+      byParent.get(k).push(c);
+    }
+    for (const arr of byParent.values()) {
+      arr.sort(sortMenu);
+    }
+    return { roots, byParent };
+  }, [categories]);
+}
+
+function CategoryFilterBranch({ node, byParent, selectedSlug, onSelect, depth }) {
+  const kids = byParent.get(String(node._id)) || [];
+  if (!kids.length) {
+    return (
+      <label key={node._id} className={`filter-cat-leaf filter-cat-depth-${Math.min(depth, 3)}`}>
+        <input
+          type="radio"
+          name="product-cat-slug"
+          checked={selectedSlug === node.slug}
+          onChange={() => onSelect(node.slug)}
+        />
+        <span>{node.ten_danh_muc}</span>
+      </label>
+    );
+  }
+  return (
+    <div key={node._id} className={`filter-cat-block filter-cat-depth-${Math.min(depth, 3)}`}>
+      <div className="filter-cat-block-title">{node.ten_danh_muc}</div>
+      <div className="filter-cat-block-children">
+        {kids.map((ch) => (
+          <CategoryFilterBranch
+            key={ch._id}
+            node={ch}
+            byParent={byParent}
+            selectedSlug={selectedSlug}
+            onSelect={onSelect}
+            depth={depth + 1}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const ProductsPage = () => {
   const navigate = useNavigate();
@@ -21,42 +79,86 @@ const ProductsPage = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const [sortBy, setSortBy] = useState("moi_nhat");
 
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [facets, setFacets] = useState({ kich_co: [], mau_sac: [] });
+  const [metaErr, setMetaErr] = useState("");
+
+  const [selectedSlug, setSelectedSlug] = useState("");
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
   const [showMoreColors, setShowMoreColors] = useState(false);
 
-  const fetchProducts = async () => {
-    try {
-      let url = `${API_URL}?page=${page}&sap_xep=${sortBy}`;
-      if (selectedCategory) url += `&danh_muc=${encodeURIComponent(selectedCategory)}`;
-      if (selectedSizes.length) url += `&kich_co=${selectedSizes.join(",")}`;
-      if (selectedColors.length) url += `&mau_sac=${selectedColors.join(",")}`;
+  const [qInput, setQInput] = useState("");
+  const [q, setQ] = useState("");
 
-      const res = await axios.get(url);
+  const { roots, byParent } = useCategoryTree(categories);
+
+  useEffect(() => {
+    const t = setTimeout(() => setQ(qInput.trim()), 400);
+    return () => clearTimeout(t);
+  }, [qInput]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setMetaErr("");
+      try {
+        const [cRes, fRes] = await Promise.all([
+          axios.get(API_CATEGORIES),
+          axios.get(`${API_PRODUCTS}/filter-facets`),
+        ]);
+        if (cancelled) return;
+        setCategories(Array.isArray(cRes.data) ? cRes.data : []);
+        setFacets({
+          kich_co: fRes.data?.kich_co || [],
+          mau_sac: fRes.data?.mau_sac || [],
+        });
+      } catch {
+        if (!cancelled) {
+          setMetaErr("Không tải được danh mục / bộ lọc từ máy chủ.");
+          setCategories([]);
+          setFacets({ kich_co: [], mau_sac: [] });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("sap_xep", sortBy);
+      if (selectedSlug) params.set("danh_muc_slug", selectedSlug);
+      if (selectedSizes.length) params.set("kich_co", selectedSizes.join(","));
+      if (selectedColors.length) params.set("mau_sac", selectedColors.join(","));
+      if (q) params.set("q", q);
+
+      const res = await axios.get(`${API_PRODUCTS}?${params.toString()}`);
       setProducts(res.data.products || []);
       setTotalPages(res.data.totalPages || 1);
       setTotalProducts(res.data.totalProducts || 0);
     } catch (err) {
       console.error("Lỗi tải sản phẩm:", err);
+      setProducts([]);
+      setTotalPages(1);
+      setTotalProducts(0);
     }
-  };
+  }, [page, sortBy, selectedSlug, selectedSizes, selectedColors, q]);
 
   useEffect(() => {
     fetchProducts();
-  }, [page, sortBy, selectedCategory, selectedSizes, selectedColors]);
+  }, [fetchProducts]);
 
   useEffect(() => {
     setPage(1);
-  }, [sortBy, selectedCategory, selectedSizes, selectedColors]);
-
-  const toggleCategory = (cat) => {
-    setSelectedCategory((prev) => (prev === cat ? "" : cat));
-  };
+  }, [sortBy, selectedSlug, selectedSizes, selectedColors, q]);
 
   const toggleFilter = (value, selected, setSelected) => {
     setSelected((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
     );
   };
 
@@ -65,86 +167,125 @@ const ProductsPage = () => {
     return price.toLocaleString("vi-VN") + "đ";
   };
 
-  const visibleColors = showMoreColors
-    ? [...COLORS_DEFAULT, ...COLORS_EXTRA]
-    : COLORS_DEFAULT;
+  const colorList = useMemo(() => {
+    const list = facets.mau_sac || [];
+    if (list.length === 0) return [];
+    return showMoreColors ? list : list.slice(0, 12);
+  }, [facets.mau_sac, showMoreColors]);
+
+  const hasMoreColors = (facets.mau_sac || []).length > 12;
 
   return (
     <div className="products-page">
       <Header />
 
       <div className="products-layout">
-        {/* SIDEBAR BỘ LỌC */}
         <aside className="filter-sidebar">
-          <h3><i className="fas fa-filter"></i> BỘ LỌC TÌM KIẾM</h3>
+          <h3>
+            <i className="fas fa-filter"></i> Bộ lọc
+          </h3>
+
+          {metaErr && <p className="filter-meta-err">{metaErr}</p>}
 
           <div className="filter-group">
-            <p className="filter-title">Theo danh mục</p>
-            {CATEGORIES.map((cat) => (
-              <label key={cat} className="filter-checkbox">
-                <input
-                  type="checkbox"
-                  checked={selectedCategory === cat}
-                  onChange={() => toggleCategory(cat)}
-                />
-                <span>{cat}</span>
-              </label>
-            ))}
+            <p className="filter-title">Tìm theo tên</p>
+            <input
+              type="search"
+              className="filter-search-input"
+              placeholder="Tên sản phẩm..."
+              value={qInput}
+              onChange={(e) => setQInput(e.target.value)}
+              aria-label="Tìm theo tên sản phẩm"
+            />
           </div>
 
           <div className="filter-group">
+            <p className="filter-title">Danh mục</p>
+            <p className="filter-hint">Theo cấu trúc cửa hàng (slug → tên trên sản phẩm).</p>
+            <label className="filter-cat-leaf filter-cat-all">
+              <input
+                type="radio"
+                name="product-cat-slug"
+                checked={!selectedSlug}
+                onChange={() => setSelectedSlug("")}
+              />
+              <span>Tất cả</span>
+            </label>
+            {roots.length === 0 && !metaErr ? (
+              <p className="filter-empty">Chưa có danh mục hoạt động.</p>
+            ) : (
+              roots.map((root) => (
+                <CategoryFilterBranch
+                  key={root._id}
+                  node={root}
+                  byParent={byParent}
+                  selectedSlug={selectedSlug}
+                  onSelect={setSelectedSlug}
+                  depth={0}
+                />
+              ))
+            )}
+          </div>
+
+          <div className="filter-group filter-group--scroll">
             <p className="filter-title">Kích cỡ</p>
-            {SIZES.map((size) => (
-              <label key={size} className="filter-checkbox">
-                <input
-                  type="checkbox"
-                  checked={selectedSizes.includes(size)}
-                  onChange={() => toggleFilter(size, selectedSizes, setSelectedSizes)}
-                />
-                <span>Size {size}</span>
-              </label>
-            ))}
+            {(facets.kich_co || []).length === 0 ? (
+              <p className="filter-empty">Chưa có dữ liệu biến thể.</p>
+            ) : (
+              facets.kich_co.map((size) => (
+                <label key={size} className="filter-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={selectedSizes.includes(size)}
+                    onChange={() => toggleFilter(size, selectedSizes, setSelectedSizes)}
+                  />
+                  <span>Size {size}</span>
+                </label>
+              ))
+            )}
           </div>
 
-          <div className="filter-group">
+          <div className="filter-group filter-group--scroll">
             <p className="filter-title">Màu sắc</p>
-            {visibleColors.map((color) => (
-              <label key={color} className="filter-checkbox">
-                <input
-                  type="checkbox"
-                  checked={selectedColors.includes(color)}
-                  onChange={() => toggleFilter(color, selectedColors, setSelectedColors)}
-                />
-                <span>{color}</span>
-              </label>
-            ))}
-            <button
-              className="show-more-btn"
-              onClick={() => setShowMoreColors(!showMoreColors)}
-            >
-              {showMoreColors ? "Thu gọn ▲" : "Thêm ▼"}
-            </button>
+            {colorList.length === 0 ? (
+              <p className="filter-empty">Chưa có dữ liệu biến thể.</p>
+            ) : (
+              colorList.map((color) => (
+                <label key={color} className="filter-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={selectedColors.includes(color)}
+                    onChange={() => toggleFilter(color, selectedColors, setSelectedColors)}
+                  />
+                  <span>{color}</span>
+                </label>
+              ))
+            )}
+            {hasMoreColors && (
+              <button type="button" className="show-more-btn" onClick={() => setShowMoreColors(!showMoreColors)}>
+                {showMoreColors ? "Thu gọn ▲" : "Thêm màu ▼"}
+              </button>
+            )}
           </div>
         </aside>
 
-        {/* MAIN CONTENT */}
         <section className="products-main">
           <div className="results-header">
             <p>
-              Kết quả tìm kiếm: <strong>{totalProducts}</strong> sản phẩm
+              Kết quả: <strong>{totalProducts}</strong> sản phẩm
             </p>
           </div>
 
-          {/* THANH SẮP XẾP */}
           <div className="sort-toolbar">
             <div className="sort-left">
               <span>Sắp xếp theo</span>
               {[
-                { key: "moi_nhat", label: "Mới Nhất" },
-                { key: "ban_chay", label: "Bán Chạy" },
+                { key: "moi_nhat", label: "Mới nhất" },
+                { key: "ban_chay", label: "Bán chạy" },
               ].map((s) => (
                 <button
                   key={s.key}
+                  type="button"
                   className={sortBy === s.key ? "active" : ""}
                   onClick={() => setSortBy(s.key)}
                 >
@@ -162,30 +303,30 @@ const ProductsPage = () => {
             </div>
 
             <div className="pagination-controls">
-              <span>{page}/{totalPages}</span>
-              <button
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
+              <span>
+                {page}/{totalPages}
+              </span>
+              <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
                 &lt;
               </button>
-              <button
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
+              <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
                 &gt;
               </button>
             </div>
           </div>
 
-          {/* GRID SẢN PHẨM */}
           <div className="products-grid">
             {products.length > 0 ? (
               products.map((item) => (
                 <div
                   key={item._id}
                   className="p-card"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => navigate(`/product/${item._id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") navigate(`/product/${item._id}`);
+                  }}
                 >
                   <div className="p-card-img">
                     <img
@@ -211,11 +352,16 @@ const ProductsPage = () => {
                       <div className="p-rating">
                         {"★".repeat(Math.round(item.sao_danh_gia || 0))}
                         {"☆".repeat(5 - Math.round(item.sao_danh_gia || 0))}
-                        <span>{item.sao_danh_gia || 0} ({item.tong_danh_gia || 0})</span>
+                        <span>
+                          {item.sao_danh_gia || 0} ({item.tong_danh_gia || 0})
+                        </span>
                       </div>
                       <button
+                        type="button"
                         className="p-add-cart"
-                        onClick={(e) => { e.stopPropagation(); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
                       >
                         <i className="fas fa-shopping-cart"></i>
                       </button>
@@ -226,17 +372,17 @@ const ProductsPage = () => {
             ) : (
               <div className="no-products-msg">
                 <i className="fas fa-box-open"></i>
-                <p>Không tìm thấy sản phẩm nào.</p>
+                <p>Không có sản phẩm phù hợp bộ lọc.</p>
               </div>
             )}
           </div>
 
-          {/* PAGINATION BOTTOM */}
           {totalPages > 1 && (
             <div className="pagination-bottom">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}
+                  type="button"
                   className={page === p ? "active" : ""}
                   onClick={() => setPage(p)}
                 >

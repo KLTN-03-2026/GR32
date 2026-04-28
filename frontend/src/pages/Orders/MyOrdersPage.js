@@ -54,8 +54,35 @@ const MyOrdersPage = () => {
   const [sortOrder, setSortOrder] = useState("desc");
   const [tongMin, setTongMin] = useState("");
   const [tongMax, setTongMax] = useState("");
+  const [cancellingId, setCancellingId] = useState(null);
+  const [listToast, setListToast] = useState("");
 
   const getToken = () => localStorage.getItem("token");
+
+  const canCancelOrder = (row) => row.trang_thai_don === "cho_xu_ly";
+
+  const handleCancelOrder = async (row) => {
+    if (!canCancelOrder(row)) return;
+    const ok = window.confirm(`Hủy đơn #${row.ma_don}? Chỉ áp dụng khi đơn đang chờ xử lý.`);
+    if (!ok) return;
+    const token = getToken();
+    if (!token) return;
+    setListToast("");
+    setCancellingId(row._id);
+    try {
+      const res = await axios.post(
+        `${API}/${row._id}/cancel`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setListToast(res.data.message || "Đã hủy đơn.");
+      await fetchOrders();
+    } catch (err) {
+      setListToast(err.response?.data?.message || "Không hủy được đơn.");
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setSearchQ(searchInput.trim()), 400);
@@ -177,6 +204,7 @@ const MyOrdersPage = () => {
           </div>
 
           {error && <p className="my-orders-error">{error}</p>}
+          {listToast && <p className="my-orders-inline-toast">{listToast}</p>}
 
           {loading ? (
             <p className="my-orders-loading">Đang tải...</p>
@@ -243,9 +271,21 @@ const MyOrdersPage = () => {
                           </span>
                         </td>
                         <td>
-                          <Link to={`/orders/${row._id}`} className="my-orders-detail-link">
-                            Xem chi tiết
-                          </Link>
+                          <div className="my-orders-actions-cell">
+                            <Link to={`/orders/${row._id}`} className="my-orders-detail-link">
+                              Xem chi tiết
+                            </Link>
+                            {canCancelOrder(row) && (
+                              <button
+                                type="button"
+                                className="my-orders-cancel-btn"
+                                disabled={cancellingId === row._id}
+                                onClick={() => handleCancelOrder(row)}
+                              >
+                                {cancellingId === row._id ? "Đang hủy..." : "Hủy đơn"}
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

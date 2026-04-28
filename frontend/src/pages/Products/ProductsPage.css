@@ -13,7 +13,8 @@
 
 /* ==================== SIDEBAR ==================== */
 .filter-sidebar {
-  width: 220px;
+  width: 260px;
+  min-width: 240px;
   flex-shrink: 0;
   background: #fff;
   padding: 20px;
@@ -37,6 +38,88 @@
 
 .filter-group {
   margin-bottom: 20px;
+}
+
+.filter-group--scroll {
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.filter-meta-err {
+  font-size: 12px;
+  color: #c62828;
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.filter-hint {
+  font-size: 11px;
+  color: #888;
+  margin: -4px 0 10px;
+  line-height: 1.35;
+}
+
+.filter-empty {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+}
+
+.filter-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.filter-cat-block {
+  margin-bottom: 12px;
+}
+
+.filter-cat-block-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 6px;
+  padding-left: 2px;
+}
+
+.filter-cat-block-children {
+  padding-left: 8px;
+  border-left: 2px solid #eee;
+}
+
+.filter-cat-leaf {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  color: #444;
+}
+
+.filter-cat-leaf input {
+  margin-top: 2px;
+  accent-color: #222;
+  cursor: pointer;
+}
+
+.filter-cat-all {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.filter-cat-depth-1 .filter-cat-block-title {
+  font-weight: 600;
+  color: #555;
+}
+
+.filter-cat-depth-2 {
+  font-size: 12px;
 }
 
 .filter-title {

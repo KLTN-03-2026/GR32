@@ -48,13 +48,24 @@ const AdminProducts = () => {
     setSearch(searchInput.trim());
   };
 
-  const handleDelete = async (id, name, daBan) => {
-    if (daBan > 0) {
-      if (!window.confirm(`Sản phẩm "${name}" đã phát sinh giao dịch.\nChuyển sang "Ngừng kinh doanh"?`)) return;
-    } else {
-      if (!window.confirm(`Bạn có chắc chắn muốn xóa "${name}"?\nHành động này không thể hoàn tác!`)) return;
+  const patchTrangThai = async (id, next, name) => {
+    const label = next === "ngung_ban" ? "ngừng bán (vẫn lưu trong CSDL)" : "mở bán lại";
+    if (!window.confirm(`Chuyển "${name}" sang ${label}?`)) return;
+    try {
+      const res = await axios.patch(`${API}/${id}/trang-thai`, { trang_thai: next }, { headers });
+      alert(res.data.message);
+      fetchProducts();
+    } catch (err) {
+      alert(err.response?.data?.message || "Lỗi cập nhật trạng thái.");
     }
+  };
 
+  const handleDeleteFromDb = async (id, name, daBan) => {
+    let msg = `Xóa vĩnh viễn sản phẩm "${name}" khỏi cơ sở dữ liệu?\nThao tác không thể hoàn tác.`;
+    if (daBan > 0) {
+      msg += `\n\nSản phẩm đã có lượt bán: đơn cũ vẫn giữ tên đã lưu trong chi tiết đơn.`;
+    }
+    if (!window.confirm(msg)) return;
     try {
       const res = await axios.delete(`${API}/${id}`, { headers });
       alert(res.data.message);
@@ -111,7 +122,7 @@ const AdminProducts = () => {
                   <th>Tồn kho</th>
                   <th>Đã bán</th>
                   <th>Trạng thái</th>
-                  <th style={{ width: 130 }}>Thao tác</th>
+                  <th style={{ width: 240 }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -138,10 +149,37 @@ const AdminProducts = () => {
                     </td>
                     <td>
                       <div className="ap-actions">
-                        <button className="btn-edit" onClick={() => navigate(`/admin-dashboard/products/edit/${p._id}`)} title="Sửa">
+                        <button
+                          type="button"
+                          className="btn-edit"
+                          onClick={() => navigate(`/admin-dashboard/products/edit/${p._id}`)}
+                          title="Sửa"
+                        >
                           <i className="fas fa-edit"></i>
                         </button>
-                        <button className="btn-delete" onClick={() => handleDelete(p._id, p.ten_san_pham, p.so_luong_da_ban)} title="Xóa">
+                        {p.trang_thai === "ngung_ban" ? (
+                          <button
+                            type="button"
+                            className="btn-toggle-ban btn-toggle-ban--resume"
+                            onClick={() => patchTrangThai(p._id, "dang_ban", p.ten_san_pham)}
+                          >
+                            Mở bán lại
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn-toggle-ban"
+                            onClick={() => patchTrangThai(p._id, "ngung_ban", p.ten_san_pham)}
+                          >
+                            Ngừng bán
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="btn-delete-hard"
+                          onClick={() => handleDeleteFromDb(p._id, p.ten_san_pham, p.so_luong_da_ban ?? 0)}
+                          title="Xóa khỏi CSDL"
+                        >
                           <i className="fas fa-trash-alt"></i>
                         </button>
                       </div>

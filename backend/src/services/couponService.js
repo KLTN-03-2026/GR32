@@ -87,6 +87,21 @@ async function incrementCouponUsageForOrder(orderId) {
   }
 }
 
+/** Khi hủy đơn: trả lại 1 lượt dùng mã nếu đơn đã được cộng lượt. */
+async function decrementCouponUsageForOrder(orderId) {
+  const order = await Order.findById(orderId).select("ma_voucher giam_gia da_cong_ma_giam").lean();
+  if (!order?.da_cong_ma_giam) return;
+  if (!order.ma_voucher || !String(order.ma_voucher).trim() || !(Number(order.giam_gia) > 0)) return;
+
+  const ma = String(order.ma_voucher).trim().toUpperCase();
+  const coupon = await Coupon.findOne({ ma });
+  if (coupon && coupon.da_su_dung > 0) {
+    coupon.da_su_dung -= 1;
+    await coupon.save();
+  }
+  await Order.updateOne({ _id: orderId }, { $set: { da_cong_ma_giam: false } });
+}
+
 function tinhTrangSuDung(c) {
   const now = new Date();
   if (c.ngay_ket_thuc < now) return "het_han";
@@ -99,5 +114,6 @@ module.exports = {
   calcTamTinhLines,
   computeCouponDiscount,
   incrementCouponUsageForOrder,
+  decrementCouponUsageForOrder,
   tinhTrangSuDung,
 };

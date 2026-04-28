@@ -13,6 +13,7 @@ const uploadFields = upload.fields([
 ]);
 
 router.get("/", auth, ctrl.getAll);
+router.patch("/:id/trang-thai", auth, ctrl.setTrangThai);
 router.get("/:id", auth, ctrl.getById);
 router.post("/", auth, uploadFields, ctrl.create);
 router.put("/:id", auth, uploadFields, ctrl.update);

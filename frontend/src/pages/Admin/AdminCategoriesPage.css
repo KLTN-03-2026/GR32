@@ -40,6 +40,23 @@
   background: #146c2e;
 }
 
+.acp-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.acp-btn--outline {
+  border: 1px solid #1a7f37;
+  background: #fff;
+  color: #1a7f37;
+}
+
+.acp-btn--outline:hover {
+  background: #f0fdf4;
+}
+
 .acp-toolbar {
   display: flex;
   flex-wrap: wrap;

@@ -22,7 +22,7 @@ exports.listPayments = async (req, res) => {
     const filter = {};
     if (status && ["cho_thanh_toan", "da_thanh_toan", "that_bai", "hoan_tien"].includes(status)) {
       filter.trang_thai_thanh_toan = status;
-    }
+    } 
     if (from || to) {
       filter.createdAt = {};
       if (from) filter.createdAt.$gte = new Date(from);

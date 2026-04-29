@@ -39,7 +39,7 @@ exports.listOrders = async (req, res) => {
       totalPages: Math.ceil(total / limit) || 1,
     });
   } catch (err) {
-    console.error(err);
+    console.error(err); 
     res.status(500).json({ message: "Lỗi server!" });
   }
 };

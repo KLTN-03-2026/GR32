@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const User = require("../models/User");
 
-const ROLES = ["khach_hang", "nhan_vien", "admin"];
 const TRANG_THAI = ["hoat_dong", "vo_hieu"];
 
 function isEmail(s) {
@@ -16,10 +15,19 @@ exports.listUsers = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const filter = {};
+    const vaiTroFilter = String(req.query.vai_tro || "").trim();
+    if (vaiTroFilter === "khach_hang" || vaiTroFilter === "nhan_vien") {
+      filter.vai_tro = vaiTroFilter;
+    }
     if (q) {
       const esc = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const rx = new RegExp(esc, "i");
-      filter.$or = [{ ho_va_ten: rx }, { email: rx }];
+      filter.$or = [
+        { ho_va_ten: rx },
+        { email: rx },
+        { so_dien_thoai: rx },
+        { dia_chi: rx },
+      ];
     }
 
     const [items, total] = await Promise.all([
@@ -46,14 +54,14 @@ exports.listUsers = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
-  const fail = () => res.status(400).json({ message: "Thêm tài khoản thất bại" });
+  const fail = () => res.status(400).json({ message: "Thêm nhân viên thất bại" });
   try {
     const ho_va_ten = String(req.body.ho_va_ten || "").trim();
     const email = String(req.body.email || "").trim().toLowerCase();
     const mat_khau = String(req.body.mat_khau || "");
     const xac_nhan = String(req.body.xac_nhan_mat_khau || "");
-    let vai_tro = String(req.body.vai_tro || "khach_hang").trim();
-    if (!ROLES.includes(vai_tro)) vai_tro = "khach_hang";
+    /** Admin chỉ tạo tài khoản nhân viên qua màn này (không tạo khách / admin). */
+    const vai_tro = "nhan_vien";
 
     if (!ho_va_ten || !email || !isEmail(email)) return fail();
     if (!mat_khau || mat_khau.length < 6) return fail();
@@ -74,11 +82,11 @@ exports.createUser = async (req, res) => {
       trang_thai: "hoat_dong",
     });
 
-    res.status(201).json({ message: "Thêm tài khoản thành công" });
+    res.status(201).json({ message: "Thêm nhân viên thành công" });
   } catch (err) {
     if (err.code === 11000) return fail();
     console.error(err);
-    res.status(500).json({ message: "Thêm tài khoản thất bại" });
+    res.status(500).json({ message: "Thêm nhân viên thất bại" });
   }
 };
 
@@ -93,11 +101,12 @@ exports.updateUser = async (req, res) => {
 
     const ho_va_ten = String(req.body.ho_va_ten ?? doc.ho_va_ten).trim();
     const email = String(req.body.email ?? doc.email).trim().toLowerCase();
-    let vai_tro = String(req.body.vai_tro ?? doc.vai_tro).trim();
+    const so_dien_thoai = String(req.body.so_dien_thoai ?? doc.so_dien_thoai ?? "").trim();
+    const dia_chi = String(req.body.dia_chi ?? doc.dia_chi ?? "").trim();
     let trang_thai = String(req.body.trang_thai ?? doc.trang_thai ?? "hoat_dong").trim();
 
     if (!ho_va_ten || !email || !isEmail(email)) return fail();
-    if (!ROLES.includes(vai_tro)) return fail();
+    if (!so_dien_thoai) return fail();
     if (!TRANG_THAI.includes(trang_thai)) trang_thai = "hoat_dong";
 
     const dup = await User.findOne({ email, _id: { $ne: doc._id } }).select("_id").lean();
@@ -105,14 +114,12 @@ exports.updateUser = async (req, res) => {
 
     const actorId = String(req.user._id);
     const targetId = String(doc._id);
-    if (actorId === targetId) {
-      if (vai_tro !== "admin") return fail();
-      if (trang_thai === "vo_hieu") return fail();
-    }
+    if (actorId === targetId && trang_thai === "vo_hieu") return fail();
 
     doc.ho_va_ten = ho_va_ten;
     doc.email = email;
-    doc.vai_tro = vai_tro;
+    doc.so_dien_thoai = so_dien_thoai;
+    doc.dia_chi = dia_chi;
     doc.trang_thai = trang_thai;
     await doc.save();
 

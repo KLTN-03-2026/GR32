@@ -34,7 +34,6 @@ const emptyAdd = {
   email: "",
   mat_khau: "",
   xac_nhan_mat_khau: "",
-  vai_tro: "khach_hang",
 };
 
 const AdminAccountsPage = () => {
@@ -54,7 +53,9 @@ const AdminAccountsPage = () => {
   const [addForm, setAddForm] = useState(emptyAdd);
   const [editForm, setEditForm] = useState(null);
   const [editId, setEditId] = useState(null);
+  const [editRoleLabel, setEditRoleLabel] = useState("");
   const [saving, setSaving] = useState(false);
+  const [listTab, setListTab] = useState("khach_hang");
 
   const selfId = useMemo(() => currentUserId(), []);
 
@@ -78,7 +79,7 @@ const AdminAccountsPage = () => {
     try {
       const res = await axios.get(API, {
         headers: authHeader(),
-        params: { q: q || undefined, page, limit: 12 },
+        params: { q: q || undefined, page, limit: 12, vai_tro: listTab },
       });
       setItems(res.data.items || []);
       setTotal(res.data.total || 0);
@@ -94,7 +95,7 @@ const AdminAccountsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [allowed, q, page, navigate]);
+  }, [allowed, q, page, navigate, listTab]);
 
   useEffect(() => {
     fetchList();
@@ -117,10 +118,15 @@ const AdminAccountsPage = () => {
     setMsg("");
     setErr("");
     setEditId(row._id);
+    setEditRoleLabel(VAI_TRO_LABEL[row.vai_tro] || row.vai_tro || "—");
     setEditForm({
       ho_va_ten: row.ho_va_ten || "",
       email: row.email || "",
-      vai_tro: row.vai_tro || "khach_hang",
+      so_dien_thoai:
+        row.so_dien_thoai && String(row.so_dien_thoai).trim() && row.so_dien_thoai !== "Chưa cập nhật"
+          ? String(row.so_dien_thoai).trim()
+          : "",
+      dia_chi: row.dia_chi || "",
       trang_thai: row.trang_thai === "vo_hieu" ? "vo_hieu" : "hoat_dong",
     });
     setModal("edit");
@@ -143,15 +149,15 @@ const AdminAccountsPage = () => {
           email: addForm.email.trim(),
           mat_khau: addForm.mat_khau,
           xac_nhan_mat_khau: addForm.xac_nhan_mat_khau,
-          vai_tro: addForm.vai_tro,
         },
         { headers: authHeader() },
       );
       setMsg(res.data.message || "Đã thêm.");
       closeModal();
-      await fetchList();
+      setListTab("nhan_vien");
+      setPage(1);
     } catch (e) {
-      setMsg(e.response?.data?.message || "Thêm tài khoản thất bại");
+      setMsg(e.response?.data?.message || "Thêm nhân viên thất bại");
     } finally {
       setSaving(false);
     }
@@ -162,7 +168,17 @@ const AdminAccountsPage = () => {
     setSaving(true);
     setMsg("");
     try {
-      const res = await axios.patch(`${API}/${editId}`, editForm, { headers: authHeader() });
+      const res = await axios.patch(
+        `${API}/${editId}`,
+        {
+          ho_va_ten: editForm.ho_va_ten.trim(),
+          email: editForm.email.trim(),
+          so_dien_thoai: editForm.so_dien_thoai.trim(),
+          dia_chi: editForm.dia_chi.trim(),
+          trang_thai: editForm.trang_thai,
+        },
+        { headers: authHeader() },
+      );
       setMsg(res.data.message || "Đã cập nhật.");
       closeModal();
       await fetchList();
@@ -192,6 +208,13 @@ const AdminAccountsPage = () => {
 
   const isSelf = (id) => selfId && String(id) === String(selfId);
 
+  const switchListTab = (tab) => {
+    setListTab(tab);
+    setPage(1);
+    setModal(null);
+    setMsg("");
+  };
+
   if (!allowed) return null;
 
   const bannerErr =
@@ -204,18 +227,38 @@ const AdminAccountsPage = () => {
   return (
     <div className="acp-page">
       <div className="acp-head">
-        <div>
+        <div className="acp-head-main">
           <h2 className="acp-title">Quản lý tài khoản</h2>
-          <p className="acp-sub">Chỉ Admin: danh sách, thêm, sửa, xóa tài khoản (không xóa vai trò Admin).</p>
+          <p className="acp-sub">
+            Phân tách khách hàng và nhân viên. Thêm nhân viên chỉ ở tab nhân viên; sửa tài khoản không đổi vai trò (vai trò cố định theo loại tài khoản).
+          </p>
+          <div className="acp-account-tabs">
+            <button
+              type="button"
+              className={`acp-account-tab${listTab === "khach_hang" ? " acp-account-tab--active" : ""}`}
+              onClick={() => switchListTab("khach_hang")}
+            >
+              Danh sách khách hàng
+            </button>
+            <button
+              type="button"
+              className={`acp-account-tab${listTab === "nhan_vien" ? " acp-account-tab--active" : ""}`}
+              onClick={() => switchListTab("nhan_vien")}
+            >
+              Danh sách nhân viên
+            </button>
+          </div>
         </div>
-        <button type="button" className="acp-btn-add" onClick={openAdd}>
-          + Thêm tài khoản
-        </button>
+        {listTab === "nhan_vien" && (
+          <button type="button" className="acp-btn-add" onClick={openAdd}>
+            + Thêm nhân viên
+          </button>
+        )}
       </div>
 
       <form className="acp-toolbar" onSubmit={applySearch}>
         <label className="acp-search-label">
-          <span>Tìm kiếm tài khoản (tên, email):</span>
+          <span>Tìm kiếm (tên, email, SĐT, địa chỉ):</span>
           <div className="acp-search-row">
             <input
               type="search"
@@ -247,6 +290,8 @@ const AdminAccountsPage = () => {
                   <th>#</th>
                   <th>Tên tài khoản</th>
                   <th>Email</th>
+                  <th>Số điện thoại</th>
+                  <th>Địa chỉ</th>
                   <th>Vai trò</th>
                   <th>Trạng thái</th>
                   <th>Hành động</th>
@@ -258,6 +303,10 @@ const AdminAccountsPage = () => {
                     <td>{(page - 1) * 12 + i + 1}</td>
                     <td>{row.ho_va_ten}</td>
                     <td className="acp-mono">{row.email}</td>
+                    <td className="acp-mono">{row.so_dien_thoai || "—"}</td>
+                    <td className="acp-ellipsis" title={row.dia_chi || ""}>
+                      {row.dia_chi ? (row.dia_chi.length > 40 ? `${row.dia_chi.slice(0, 40)}…` : row.dia_chi) : "—"}
+                    </td>
                     <td>{VAI_TRO_LABEL[row.vai_tro] || row.vai_tro}</td>
                     <td>
                       {row.trang_thai === "vo_hieu" ? (
@@ -307,12 +356,15 @@ const AdminAccountsPage = () => {
         <div className="acp-modal-overlay" role="presentation" onClick={closeModal}>
           <div className="acp-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="acp-modal-head">
-              <h3>Thêm tài khoản mới</h3>
+              <h3>Thêm nhân viên</h3>
               <button type="button" className="acp-modal-x" onClick={closeModal} aria-label="Đóng">
                 ×
               </button>
             </div>
             <form onSubmit={submitAdd} className="acp-modal-body">
+              <p className="acp-muted" style={{ marginTop: 0 }}>
+                Tài khoản mới sẽ có vai trò <strong>Nhân viên</strong> (đăng nhập khu admin theo quyền nhân viên).
+              </p>
               <label className="acp-field acp-field--full">
                 <span>Tên tài khoản *</span>
                 <input
@@ -353,24 +405,12 @@ const AdminAccountsPage = () => {
                   className="acp-input"
                 />
               </label>
-              <label className="acp-field acp-field--full">
-                <span>Vai trò</span>
-                <select
-                  className="acp-select acp-select--block"
-                  value={addForm.vai_tro}
-                  onChange={(e) => setAddForm((f) => ({ ...f, vai_tro: e.target.value }))}
-                >
-                  <option value="khach_hang">Khách hàng</option>
-                  <option value="nhan_vien">Nhân viên</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </label>
               <div className="acp-modal-actions">
                 <button type="button" className="acp-btn acp-btn--ghost" onClick={closeModal}>
                   Hủy
                 </button>
                 <button type="submit" className="acp-btn acp-btn--primary" disabled={saving}>
-                  {saving ? "Đang lưu..." : "Thêm tài khoản"}
+                  {saving ? "Đang lưu..." : "Thêm nhân viên"}
                 </button>
               </div>
             </form>
@@ -408,21 +448,31 @@ const AdminAccountsPage = () => {
                 />
               </label>
               <label className="acp-field acp-field--full">
-                <span>Vai trò</span>
-                <select
-                  className="acp-select acp-select--block"
-                  value={editForm.vai_tro}
-                  disabled={isSelf(editId)}
-                  onChange={(e) => setEditForm((f) => ({ ...f, vai_tro: e.target.value }))}
-                >
-                  <option value="khach_hang">Khách hàng</option>
-                  <option value="nhan_vien">Nhân viên</option>
-                  <option value="admin">Admin</option>
-                </select>
-                {isSelf(editId) && (
-                  <small className="acp-muted">Không đổi vai trò của chính bạn tại đây.</small>
-                )}
+                <span>Số điện thoại *</span>
+                <input
+                  required
+                  type="tel"
+                  autoComplete="tel"
+                  value={editForm.so_dien_thoai}
+                  onChange={(e) => setEditForm((f) => ({ ...f, so_dien_thoai: e.target.value }))}
+                  className="acp-input"
+                  placeholder="VD: 0901234567"
+                />
               </label>
+              <label className="acp-field acp-field--full">
+                <span>Địa chỉ</span>
+                <textarea
+                  rows={3}
+                  value={editForm.dia_chi}
+                  onChange={(e) => setEditForm((f) => ({ ...f, dia_chi: e.target.value }))}
+                  className="acp-input"
+                  placeholder="Địa chỉ liên hệ / giao hàng (có thể để trống)"
+                />
+              </label>
+              <div className="acp-readonly-field">
+                <span>Vai trò</span>
+                {editRoleLabel} (không chỉnh được)
+              </div>
               <label className="acp-field acp-field--full">
                 <span>Trạng thái</span>
                 <select

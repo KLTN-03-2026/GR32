@@ -21,6 +21,13 @@
   color: #fff;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.banner-slide:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
 }
 
 .banner-content h1 {
@@ -54,12 +61,16 @@
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .banner-btn:hover {
   background: #ddd;
   color: #222;
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 /* ==================== SECTION TITLE ==================== */
@@ -88,11 +99,14 @@
   border-radius: 10px;
   overflow: hidden;
   background: #fff;
-  transition: 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
 }
 
 .voucher-card:hover {
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  border-color: #ddd;
 }
 
 .voucher-left {
@@ -200,7 +214,8 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(1);
 }
 
 .tab.active,
@@ -208,6 +223,8 @@
   background: #000;
   color: #fff;
   border-color: #000;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* ==================== PRODUCT GRID ==================== */
@@ -230,13 +247,15 @@
   overflow: hidden;
   position: relative;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: #fff;
+  transform: translateY(0);
 }
 
 .product-card:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-5px);
+  border-color: #ddd;
 }
 
 .product-img {
@@ -328,14 +347,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: #555;
+  transform: scale(1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .add-to-cart:hover {
   background: #222;
   color: #fff;
   border-color: #222;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* ==================== VIEW ALL BUTTON ==================== */
@@ -349,12 +372,16 @@
   font-weight: bold;
   font-size: 14px;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .view-all-btn:hover {
   background: #333;
   color: #fff;
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 /* ==================== CHATBOT BUTTON ==================== */
@@ -372,11 +399,26 @@
   gap: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   z-index: 999;
-  transition: 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(1);
+  animation: chatbotPulse 2s infinite;
+}
+
+@keyframes chatbotPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  }
 }
 
 .chatbot-fixed-btn:hover {
   background: #555;
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* ==================== SCROLL TO TOP ==================== */
@@ -395,13 +437,16 @@
   justify-content: center;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
   z-index: 999;
-  transition: 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: #333;
+  transform: scale(1);
 }
 
 .scroll-top-btn:hover {
   background: #333;
   color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 /* ==================== RESPONSIVE ==================== */

@@ -13,7 +13,7 @@ const {
 
 const PHI_SHIP_GIAO_TAN_NOI = 20000;
 
-function generateMaDon() {
+function generateMaDon() { 
   const t = Date.now().toString(36).toUpperCase();
   const r = Math.random().toString(36).slice(2, 6).toUpperCase();
   return `DH${t}${r}`;

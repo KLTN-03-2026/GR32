@@ -7,13 +7,7 @@ import Header from "../../components/Layout/Header";
 import "./Home.css";
 
 const API_URL = `${API_BASE}/api/products`;
-
-const vouchers = [
-  { code: "APR20", amount: "20k", condition: "Đơn từ 499k", expiry: "30/04/2026" },
-  { code: "APR60", amount: "60k", condition: "Đơn từ 799k", expiry: "30/04/2026" },
-  { code: "APR90", amount: "90k", condition: "Đơn từ 1.299k", expiry: "30/04/2026" },
-  { code: "APR150", amount: "150k", condition: "Đơn từ 1.999k", expiry: "30/04/2026" },
-];
+const API_COUPONS_DISPLAY = `${API_BASE}/api/coupons/display`;
 
 const Home = () => {
   const navigate = useNavigate();
@@ -21,10 +15,26 @@ const Home = () => {
   const [allProducts, setAllProducts] = useState([]);
   const [activeTab, setActiveTab] = useState("moi_nhat");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [vouchers, setVouchers] = useState([]);
+  const [vouchersErr, setVouchersErr] = useState("");
+  const [copiedCode, setCopiedCode] = useState("");
 
   useEffect(() => {
     fetchFeaturedProducts("moi_nhat");
     fetchAllProducts();
+    let cancelled = false;
+    setVouchersErr("");
+    axios
+      .get(API_COUPONS_DISPLAY)
+      .then((res) => {
+        if (!cancelled && Array.isArray(res.data)) setVouchers(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setVouchersErr("Không tải được mã ưu đãi.");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -62,6 +72,16 @@ const Home = () => {
   };
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  const copyVoucherCode = async (code) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(""), 2000);
+    } catch {
+      window.prompt("Sao chép mã:", code);
+    }
+  };
 
   const ProductCard = ({ product }) => (
     <div className="product-card" onClick={() => navigate(`/product/${product._id}`)}>
@@ -114,6 +134,10 @@ const Home = () => {
         {/* Voucher / Ưu đãi */}
         <section className="voucher-section">
           <h2 className="section-title">Ưu đãi</h2>
+          {vouchersErr && <p className="voucher-strip-msg voucher-strip-msg--err">{vouchersErr}</p>}
+          {!vouchersErr && vouchers.length === 0 && (
+            <p className="voucher-strip-msg">Hiện chưa có mã giảm giá đang hiển thị. Vui lòng quay lại sau.</p>
+          )}
           <div className="voucher-grid">
             {vouchers.map((v) => (
               <div key={v.code} className="voucher-card">
@@ -121,10 +145,21 @@ const Home = () => {
                   <span className="voucher-code">{v.code}</span>
                 </div>
                 <div className="voucher-right">
-                  <p className="voucher-amount">Giảm {v.amount}</p>
-                  <p className="voucher-condition">{v.condition}</p>
+                  <p className="voucher-amount">{v.amountText}</p>
+                  <p className="voucher-condition">{v.conditionText}</p>
+                  {v.mo_ta ? <p className="voucher-desc">{v.mo_ta}</p> : null}
+                  {v.categoryRestricted && v.categoryHint ? (
+                    <p className="voucher-note">{v.categoryHint}</p>
+                  ) : null}
                   <p className="voucher-meta">Mã: {v.code}</p>
-                  <p className="voucher-meta">HSD: {v.expiry}</p>
+                  <p className="voucher-meta">HSD: {v.expiryText}</p>
+                  <button
+                    type="button"
+                    className="voucher-copy-btn"
+                    onClick={() => copyVoucherCode(v.code)}
+                  >
+                    {copiedCode === v.code ? "Đã chép!" : "Sao chép mã"}
+                  </button>
                 </div>
               </div>
             ))}

@@ -53,7 +53,12 @@ async function computeCouponDiscount(cart, maInput, tamTinh, opts = {}) {
 
   const dmMap = await loadCartProductDanhMucMap(cart);
   if (!cartMatchesDanhMuc(coupon, dmMap, cart)) {
-    return { discount: 0, ma, error: "Giỏ hàng không đủ điều kiện danh mục áp dụng" };
+    const allowed = coupon.danh_muc_ap_dung || [];
+    const extra =
+      allowed.length > 0
+        ? ` Mã chỉ áp dụng khi toàn bộ sản phẩm trong giỏ thuộc một trong các danh mục: ${allowed.join(", ")}.`
+        : "";
+    return { discount: 0, ma, error: `Giỏ hàng không đủ điều kiện danh mục áp dụng.${extra}` };
   }
 
   const t = Number(tamTinh) || 0;

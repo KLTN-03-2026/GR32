@@ -136,6 +136,48 @@
   color: #999;
 }
 
+.voucher-desc {
+  font-size: 12px;
+  color: #555;
+  margin: 4px 0 6px;
+  line-height: 1.35;
+}
+
+.voucher-note {
+  font-size: 11px;
+  color: #b45309;
+  margin: 0 0 6px;
+  line-height: 1.35;
+}
+
+.voucher-strip-msg {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 12px;
+}
+
+.voucher-strip-msg--err {
+  color: #c0392b;
+}
+
+.voucher-copy-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #222;
+  border-radius: 6px;
+  background: #fff;
+  color: #222;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.voucher-copy-btn:hover {
+  background: #222;
+  color: #fff;
+}
+
 /* ==================== PRODUCT TABS ==================== */
 .section-header {
   display: flex;

@@ -294,12 +294,34 @@
   margin-bottom: 14px;
 }
 
+.checkout-voucher-hint {
+  font-size: 12px;
+  color: #777;
+  margin: 0 0 10px;
+  line-height: 1.45;
+}
+
 .checkout-vchip {
   display: flex;
   border: 1px solid #eee;
   border-radius: 6px;
   overflow: hidden;
   font-size: 11px;
+}
+
+.checkout-vchip--selectable {
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.checkout-vchip--selectable:hover {
+  border-color: #111;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.checkout-vchip--selectable:focus {
+  outline: 2px solid #111;
+  outline-offset: 2px;
 }
 
 .vchip-code {
@@ -320,6 +342,13 @@
 .vchip-body p {
   margin: 2px 0;
   color: #666;
+}
+
+.vchip-cat-hint {
+  margin: 4px 0 2px !important;
+  font-size: 10px !important;
+  color: #b45309 !important;
+  line-height: 1.35;
 }
 
 .vchip-body small {

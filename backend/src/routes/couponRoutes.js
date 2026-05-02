@@ -3,6 +3,7 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const ctrl = require("../controllers/couponPreviewController");
 
+router.get("/display", ctrl.listPublicDisplay);
 router.post("/preview", authMiddleware, ctrl.preview);
 
 module.exports = router;

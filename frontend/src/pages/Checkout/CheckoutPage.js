@@ -13,33 +13,6 @@ const API_COUPONS = `${API_BASE}/api/coupons`;
 
 const PHI_SHIP = 20000;
 
-const VOUCHER_DISPLAY = [
-  {
-    code: "APR20",
-    amount: "20k",
-    condition: "Đơn từ 499k",
-    expiry: "30/04/2026",
-  },
-  {
-    code: "APR60",
-    amount: "60k",
-    condition: "Đơn từ 799k",
-    expiry: "30/04/2026",
-  },
-  {
-    code: "APR90",
-    amount: "90k",
-    condition: "Đơn từ 1.299k",
-    expiry: "30/04/2026",
-  },
-  {
-    code: "APR150",
-    amount: "150k",
-    condition: "Đơn từ 1.999k",
-    expiry: "30/04/2026",
-  },
-];
-
 const BANK_INFO = {
   ten_ngan_hang: "Ngân hàng TMCP Quân đội (MB)",
   so_tai_khoan: "0906532622",
@@ -79,6 +52,7 @@ const CheckoutPage = () => {
   const [maVoucher, setMaVoucher] = useState("");
   const [giamGia, setGiamGia] = useState(0);
   const [voucherMsg, setVoucherMsg] = useState("");
+  const [voucherStrip, setVoucherStrip] = useState([]);
 
   const tamTinh = useMemo(
     () => items.reduce((s, it) => s + it.gia * it.so_luong, 0),
@@ -92,6 +66,21 @@ const CheckoutPage = () => {
       tongCong: Math.max(0, tamTinh - giamGia + ship),
     };
   }, [tamTinh, giamGia, phuong_thuc_van_chuyen]);
+
+  useEffect(() => {
+    let cancelled = false;
+    axios
+      .get(`${API_COUPONS}/display`)
+      .then((res) => {
+        if (!cancelled && Array.isArray(res.data)) setVoucherStrip(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setVoucherStrip([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -540,14 +529,32 @@ const CheckoutPage = () => {
 
             <section className="checkout-card">
               <h2 className="checkout-section-title">Ưu đãi — ONLY ONLINE</h2>
+              <p className="checkout-voucher-hint">
+                Mã lấy từ quản trị (đang hiệu lực, bật hiển thị). Bấm thẻ để điền mã — sau đó bấm &quot;Áp dụng Voucher&quot;.
+              </p>
               <div className="checkout-voucher-strip">
-                {VOUCHER_DISPLAY.map((v) => (
-                  <div key={v.code} className="checkout-vchip">
+                {voucherStrip.map((v) => (
+                  <div
+                    key={v.code}
+                    className="checkout-vchip checkout-vchip--selectable"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setVoucherInput(v.code)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setVoucherInput(v.code);
+                      }
+                    }}
+                  >
                     <span className="vchip-code">{v.code}</span>
                     <div className="vchip-body">
-                      <strong>Giảm {v.amount}</strong>
-                      <p>{v.condition}</p>
-                      <small>HSD: {v.expiry}</small>
+                      <strong>{v.amountText}</strong>
+                      <p>{v.conditionText}</p>
+                      {v.categoryRestricted && v.categoryHint ? (
+                        <p className="vchip-cat-hint">{v.categoryHint}</p>
+                      ) : null}
+                      <small>HSD: {v.expiryText}</small>
                     </div>
                   </div>
                 ))}

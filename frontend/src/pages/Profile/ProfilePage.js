@@ -2,6 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
+import { normalizeVnPhone10, MSG_INVALID_VN_PHONE } from "../../utils/vnPhone";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
 import "./ProfilePage.css";
@@ -68,10 +69,18 @@ const ProfilePage = () => {
       return;
     }
 
+    const phoneNorm = normalizeVnPhone10(so_dien_thoai);
+    if (!phoneNorm) {
+      setErrorMsg(MSG_INVALID_VN_PHONE);
+      return;
+    }
+
     try {
-      const res = await axios.put(`${API}/profile`, editForm, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
+      const res = await axios.put(
+        `${API}/profile`,
+        { ...editForm, so_dien_thoai: phoneNorm },
+        { headers: { Authorization: `Bearer ${getToken()}` } },
+      );
       setProfile(res.data.user);
       localStorage.setItem("user", JSON.stringify({
         _id: res.data.user._id,
@@ -206,10 +215,13 @@ const ProfilePage = () => {
                 <div className="form-group">
                   <label>Số điện thoại</label>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
                     value={editForm.so_dien_thoai}
                     onChange={(e) => setEditForm({ ...editForm, so_dien_thoai: e.target.value })}
                   />
+                  <p className="profile-field-hint">Đúng 10 số Việt Nam, bắt đầu bằng 0 (ví dụ 0901234567). Có thể nhập dạng +84…</p>
                 </div>
                 <div className="form-group">
                   <label>Địa chỉ nhận hàng</label>

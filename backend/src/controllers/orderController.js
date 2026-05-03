@@ -10,6 +10,7 @@ const {
   incrementCouponUsageForOrder,
   decrementCouponUsageForOrder,
 } = require("../services/couponService");
+const { normalizeVnPhone10, PHONE_INVALID_MSG } = require("../utils/vnPhone");
 
 const PHI_SHIP_GIAO_TAN_NOI = 20000;
 
@@ -117,6 +118,10 @@ exports.checkout = async (req, res) => {
     if (!ho_va_ten?.trim() || !so_dien_thoai?.trim() || !email?.trim()) {
       return res.status(400).json({ message: "Vui lòng nhập đủ họ tên, số điện thoại và email." });
     }
+    const phoneNorm = normalizeVnPhone10(so_dien_thoai);
+    if (!phoneNorm) {
+      return res.status(400).json({ message: PHONE_INVALID_MSG });
+    }
     if (!dia_chi_chi_tiet?.trim()) {
       return res.status(400).json({
         message: "Vui lòng nhập địa chỉ nhận hàng.",
@@ -166,7 +171,7 @@ exports.checkout = async (req, res) => {
         nguoi_dung_id: userId,
         chi_tiet: chiTiet,
         ho_va_ten: ho_va_ten.trim(),
-        so_dien_thoai: so_dien_thoai.trim(),
+        so_dien_thoai: phoneNorm,
         email: email.trim(),
         dia_chi_chi_tiet: dia_chi_chi_tiet.trim(),
         ghi_chu: (ghi_chu || "").trim(),
@@ -222,7 +227,7 @@ exports.checkout = async (req, res) => {
       nguoi_dung_id: userId,
       chi_tiet: chiTiet,
       ho_va_ten: ho_va_ten.trim(),
-      so_dien_thoai: so_dien_thoai.trim(),
+      so_dien_thoai: phoneNorm,
       email: email.trim(),
       dia_chi_chi_tiet: dia_chi_chi_tiet.trim(),
       ghi_chu: (ghi_chu || "").trim(),

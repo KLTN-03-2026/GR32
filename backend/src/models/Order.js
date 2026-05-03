@@ -21,7 +21,14 @@ const orderSchema = new mongoose.Schema(
     chi_tiet: [orderLineSchema],
 
     ho_va_ten: { type: String, required: true },
-    so_dien_thoai: { type: String, required: true },
+    so_dien_thoai: {
+      type: String,
+      required: true,
+      validate: {
+        validator: (v) => /^0\d{9}$/.test(String(v || "")),
+        message: "Số điện thoại phải là đúng 10 chữ số (bắt đầu bằng 0).",
+      },
+    },
     email: { type: String, default: "" },
     dia_chi_chi_tiet: { type: String, default: "" },
     ghi_chu: { type: String, default: "" },

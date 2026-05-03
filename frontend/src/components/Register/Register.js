@@ -2,6 +2,7 @@ import axios from "axios";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
+import { normalizeVnPhone10, MSG_INVALID_VN_PHONE } from "../../utils/vnPhone";
 import "./Register.css";
 
 const Register = () => {
@@ -34,10 +35,17 @@ const Register = () => {
       return;
     }
 
+    const phoneNorm = normalizeVnPhone10(formData.so_dien_thoai);
+    if (!phoneNorm) {
+      setMsg(MSG_INVALID_VN_PHONE);
+      setIsErr(true);
+      return;
+    }
+
     try {
       const res = await axios.post(
         `${API_BASE}/api/auth/register`,
-        formData,
+        { ...formData, so_dien_thoai: phoneNorm },
       );
       setMsg(res.data.message);
       setIsErr(false);
@@ -107,9 +115,12 @@ const Register = () => {
 
           <div className="input-group">
             <input
-              type="text"
-              placeholder="Số điện thoại*"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
+              placeholder="Số điện thoại* (10 số, VD: 0901234567)"
               required
+              value={formData.so_dien_thoai}
               onChange={(e) =>
                 setFormData({ ...formData, so_dien_thoai: e.target.value })
               }

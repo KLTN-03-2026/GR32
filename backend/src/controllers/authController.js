@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const sendEmail = require("../utils/sendEmail");
+const { normalizeVnPhone10, PHONE_INVALID_MSG } = require("../utils/vnPhone");
 
 // --- 1. ĐĂNG KÝ ---
 exports.register = async (req, res) => {
@@ -12,17 +13,28 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Mật khẩu phải có ít nhất 6 ký tự!" });
     }
 
-    const userExists = await User.findOne({ email });
+    const ho = String(ho_va_ten || "").trim();
+    const em = String(email || "").trim().toLowerCase();
+    const gt = String(gioi_tinh || "").trim();
+    const phoneNorm = normalizeVnPhone10(so_dien_thoai);
+    if (!ho || !em || !gt) {
+      return res.status(400).json({ message: "Vui lòng nhập đủ thông tin." });
+    }
+    if (!phoneNorm) {
+      return res.status(400).json({ message: PHONE_INVALID_MSG });
+    }
+
+    const userExists = await User.findOne({ email: em });
     if (userExists)
       return res.status(400).json({ message: "Email đã tồn tại!" });
 
     const token_kich_hoat = crypto.randomBytes(32).toString("hex");
 
     const user = await User.create({
-      ho_va_ten,
-      email,
-      gioi_tinh,
-      so_dien_thoai,
+      ho_va_ten: ho,
+      email: em,
+      gioi_tinh: gt,
+      so_dien_thoai: phoneNorm,
       mat_khau,
       da_kich_hoat: false,
       token_kich_hoat,
@@ -158,8 +170,15 @@ exports.updateProfile = async (req, res) => {
   try {
     const { ho_va_ten, so_dien_thoai, dia_chi } = req.body;
 
-    if (!ho_va_ten || !so_dien_thoai || !dia_chi) {
+    const ho = String(ho_va_ten || "").trim();
+    const dc = String(dia_chi || "").trim();
+    const phoneNorm = normalizeVnPhone10(so_dien_thoai);
+
+    if (!ho || !dc) {
       return res.status(400).json({ message: "Vui lòng nhập đủ thông tin." });
+    }
+    if (!phoneNorm) {
+      return res.status(400).json({ message: PHONE_INVALID_MSG });
     }
 
     const user = await User.findById(req.user._id);
@@ -167,9 +186,9 @@ exports.updateProfile = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng!" });
     }
 
-    user.ho_va_ten = ho_va_ten;
-    user.so_dien_thoai = so_dien_thoai;
-    user.dia_chi = dia_chi;
+    user.ho_va_ten = ho;
+    user.so_dien_thoai = phoneNorm;
+    user.dia_chi = dc;
     await user.save();
 
     const updatedUser = user.toObject();

@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
 import API_BASE from "../../config";
+import { normalizeVnPhone10, MSG_INVALID_VN_PHONE } from "../../utils/vnPhone";
 import "./CheckoutPage.css";
 
 const API_AUTH = `${API_BASE}/api/auth`;
@@ -247,6 +248,12 @@ const CheckoutPage = () => {
       return;
     }
 
+    const phoneNorm = normalizeVnPhone10(so_dien_thoai);
+    if (!phoneNorm) {
+      setErrorMsg(MSG_INVALID_VN_PHONE);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const token = getToken();
@@ -254,7 +261,7 @@ const CheckoutPage = () => {
         `${API_ORDERS}/checkout`,
         {
           ho_va_ten: ho_va_ten.trim(),
-          so_dien_thoai: so_dien_thoai.trim(),
+          so_dien_thoai: phoneNorm,
           email: email.trim(),
           dia_chi_chi_tiet: dia_chi_chi_tiet.trim(),
           ghi_chu: ghi_chu.trim(),
@@ -348,9 +355,12 @@ const CheckoutPage = () => {
                     Số điện thoại <span className="req">*</span>
                   </span>
                   <input
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
                     value={so_dien_thoai}
                     onChange={(e) => setSoDienThoai(e.target.value)}
-                    placeholder="09xxxxxxxx"
+                    placeholder="0901234567 (10 số)"
                   />
                 </label>
                 <label className="checkout-field">

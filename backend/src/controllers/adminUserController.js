@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const User = require("../models/User");
+const { normalizeVnPhone10, PHONE_INVALID_MSG } = require("../utils/vnPhone");
 
 const TRANG_THAI = ["hoat_dong", "vo_hieu"];
 
@@ -58,12 +59,18 @@ exports.createUser = async (req, res) => {
   try {
     const ho_va_ten = String(req.body.ho_va_ten || "").trim();
     const email = String(req.body.email || "").trim().toLowerCase();
+    const phoneRaw = String(req.body.so_dien_thoai || "").trim();
+    const so_dien_thoai = normalizeVnPhone10(phoneRaw);
+    const dia_chi = String(req.body.dia_chi || "").trim();
     const mat_khau = String(req.body.mat_khau || "");
     const xac_nhan = String(req.body.xac_nhan_mat_khau || "");
     /** Admin chỉ tạo tài khoản nhân viên qua màn này (không tạo khách / admin). */
     const vai_tro = "nhan_vien";
 
     if (!ho_va_ten || !email || !isEmail(email)) return fail();
+    if (!so_dien_thoai) {
+      return res.status(400).json({ message: PHONE_INVALID_MSG });
+    }
     if (!mat_khau || mat_khau.length < 6) return fail();
     if (mat_khau !== xac_nhan) return fail();
 
@@ -74,8 +81,8 @@ exports.createUser = async (req, res) => {
       ho_va_ten,
       email,
       gioi_tinh: "Khac",
-      so_dien_thoai: "Chưa cập nhật",
-      dia_chi: "",
+      so_dien_thoai,
+      dia_chi,
       mat_khau,
       da_kich_hoat: true,
       vai_tro,
@@ -101,12 +108,15 @@ exports.updateUser = async (req, res) => {
 
     const ho_va_ten = String(req.body.ho_va_ten ?? doc.ho_va_ten).trim();
     const email = String(req.body.email ?? doc.email).trim().toLowerCase();
-    const so_dien_thoai = String(req.body.so_dien_thoai ?? doc.so_dien_thoai ?? "").trim();
+    const phoneRaw = String(req.body.so_dien_thoai ?? doc.so_dien_thoai ?? "").trim();
+    const so_dien_thoai = normalizeVnPhone10(phoneRaw);
     const dia_chi = String(req.body.dia_chi ?? doc.dia_chi ?? "").trim();
     let trang_thai = String(req.body.trang_thai ?? doc.trang_thai ?? "hoat_dong").trim();
 
     if (!ho_va_ten || !email || !isEmail(email)) return fail();
-    if (!so_dien_thoai) return fail();
+    if (!so_dien_thoai) {
+      return res.status(400).json({ message: PHONE_INVALID_MSG });
+    }
     if (!TRANG_THAI.includes(trang_thai)) trang_thai = "hoat_dong";
 
     const dup = await User.findOne({ email, _id: { $ne: doc._id } }).select("_id").lean();

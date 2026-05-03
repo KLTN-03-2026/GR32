@@ -2,6 +2,7 @@ import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
+import { normalizeVnPhone10, MSG_INVALID_VN_PHONE } from "../../utils/vnPhone";
 import "./AdminCategoriesPage.css";
 
 const API = `${API_BASE}/api/admin/users`;
@@ -29,9 +30,22 @@ function currentUserId() {
   }
 }
 
+function isErrMessage(m) {
+  if (!m) return false;
+  return (
+    m.includes("thất bại") ||
+    m.includes("Vui lòng") ||
+    m.includes("Không") ||
+    m.includes("lỗi") ||
+    m.includes("Số điện thoại phải")
+  );
+}
+
 const emptyAdd = {
   ho_va_ten: "",
   email: "",
+  so_dien_thoai: "",
+  dia_chi: "",
   mat_khau: "",
   xac_nhan_mat_khau: "",
 };
@@ -139,14 +153,21 @@ const AdminAccountsPage = () => {
 
   const submitAdd = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setMsg("");
+    const phoneNorm = normalizeVnPhone10(addForm.so_dien_thoai);
+    if (!phoneNorm) {
+      setMsg(MSG_INVALID_VN_PHONE);
+      return;
+    }
+    setSaving(true);
     try {
       const res = await axios.post(
         API,
         {
           ho_va_ten: addForm.ho_va_ten.trim(),
           email: addForm.email.trim(),
+          so_dien_thoai: phoneNorm,
+          dia_chi: addForm.dia_chi.trim(),
           mat_khau: addForm.mat_khau,
           xac_nhan_mat_khau: addForm.xac_nhan_mat_khau,
         },
@@ -165,15 +186,20 @@ const AdminAccountsPage = () => {
 
   const submitEdit = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setMsg("");
+    const phoneNorm = normalizeVnPhone10(editForm.so_dien_thoai);
+    if (!phoneNorm) {
+      setMsg(MSG_INVALID_VN_PHONE);
+      return;
+    }
+    setSaving(true);
     try {
       const res = await axios.patch(
         `${API}/${editId}`,
         {
           ho_va_ten: editForm.ho_va_ten.trim(),
           email: editForm.email.trim(),
-          so_dien_thoai: editForm.so_dien_thoai.trim(),
+          so_dien_thoai: phoneNorm,
           dia_chi: editForm.dia_chi.trim(),
           trang_thai: editForm.trang_thai,
         },
@@ -217,12 +243,7 @@ const AdminAccountsPage = () => {
 
   if (!allowed) return null;
 
-  const bannerErr =
-    msg &&
-    (msg.includes("thất bại") ||
-      msg.includes("Vui lòng") ||
-      msg.includes("Không") ||
-      msg.includes("lỗi"));
+  const bannerErr = msg && isErrMessage(msg);
 
   return (
     <div className="acp-page">
@@ -365,6 +386,11 @@ const AdminAccountsPage = () => {
               <p className="acp-muted" style={{ marginTop: 0 }}>
                 Tài khoản mới sẽ có vai trò <strong>Nhân viên</strong> (đăng nhập khu admin theo quyền nhân viên).
               </p>
+              {msg && isErrMessage(msg) && (
+                <div className="acp-banner acp-banner--err" role="alert" style={{ marginBottom: "0.75rem" }}>
+                  {msg}
+                </div>
+              )}
               <label className="acp-field acp-field--full">
                 <span>Tên tài khoản *</span>
                 <input
@@ -382,6 +408,30 @@ const AdminAccountsPage = () => {
                   value={addForm.email}
                   onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
                   className="acp-input"
+                />
+              </label>
+              <label className="acp-field acp-field--full">
+                <span>Số điện thoại *</span>
+                <input
+                  required
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  value={addForm.so_dien_thoai}
+                  onChange={(e) => setAddForm((f) => ({ ...f, so_dien_thoai: e.target.value }))}
+                  className="acp-input"
+                  placeholder="VD: 0901234567 hoặc +84901234567"
+                />
+                <small className="acp-muted">Đúng 10 số Việt Nam, bắt đầu bằng 0.</small>
+              </label>
+              <label className="acp-field acp-field--full">
+                <span>Địa chỉ</span>
+                <textarea
+                  rows={3}
+                  value={addForm.dia_chi}
+                  onChange={(e) => setAddForm((f) => ({ ...f, dia_chi: e.target.value }))}
+                  className="acp-input"
+                  placeholder="Địa chỉ liên hệ (có thể để trống)"
                 />
               </label>
               <label className="acp-field acp-field--full">
@@ -428,6 +478,11 @@ const AdminAccountsPage = () => {
               </button>
             </div>
             <form onSubmit={submitEdit} className="acp-modal-body">
+              {msg && isErrMessage(msg) && (
+                <div className="acp-banner acp-banner--err" role="alert" style={{ marginBottom: "0.75rem" }}>
+                  {msg}
+                </div>
+              )}
               <label className="acp-field acp-field--full">
                 <span>Tên tài khoản *</span>
                 <input
@@ -452,12 +507,14 @@ const AdminAccountsPage = () => {
                 <input
                   required
                   type="tel"
+                  inputMode="numeric"
                   autoComplete="tel"
                   value={editForm.so_dien_thoai}
                   onChange={(e) => setEditForm((f) => ({ ...f, so_dien_thoai: e.target.value }))}
                   className="acp-input"
-                  placeholder="VD: 0901234567"
+                  placeholder="VD: 0901234567 hoặc +84901234567"
                 />
+                <small className="acp-muted">Đúng 10 số Việt Nam, bắt đầu bằng 0.</small>
               </label>
               <label className="acp-field acp-field--full">
                 <span>Địa chỉ</span>

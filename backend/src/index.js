@@ -20,6 +20,7 @@ const adminBrandRoutes = require("./routes/adminBrandRoutes");
 const adminUserRoutes = require("./routes/adminUserRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const adminCouponRoutes = require("./routes/adminCouponRoutes");
+const adminReportRoutes = require("./routes/adminReportRoutes");
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/admin/categories", adminCategoryRoutes);
 app.use("/api/admin/brands", adminBrandRoutes);
 app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/admin/coupons", adminCouponRoutes);
+app.use("/api/admin/reports", adminReportRoutes);
 
 // --- 5. KHỞI CHẠY SERVER ---
 const PORT = process.env.PORT || 5000;

@@ -125,7 +125,7 @@ const AdminLayout = () => {
             className={`sidebar-link ${navActive("/admin-dashboard/coupons") ? "active" : ""}`}
           >
             <i className="fas fa-ticket-alt"></i>
-            {sidebarOpen && <span>Mã giảm giá</span>}
+            {sidebarOpen && <span>Quản lý mã giảm giá</span>}
           </Link>
           <Link
             to="/admin-dashboard/payments"
@@ -143,6 +143,13 @@ const AdminLayout = () => {
               {sidebarOpen && <span>Quản lý tài khoản</span>}
             </Link>
           )}
+          <Link
+            to="/admin-dashboard/reports"
+            className={`sidebar-link ${navActive("/admin-dashboard/reports") ? "active" : ""}`}
+          >
+            <i className="fas fa-chart-line"></i>
+            {sidebarOpen && <span>Báo cáo thống kê</span>}
+          </Link>
         </nav>
 
         <div className="sidebar-footer">

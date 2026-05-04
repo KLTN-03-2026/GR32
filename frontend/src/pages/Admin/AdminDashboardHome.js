@@ -37,6 +37,15 @@ const AdminDashboardHome = () => {
     <div className="admin-home">
       <h2>Tổng quan hệ thống</h2>
       <div className="admin-stats-grid">
+        <Link to="/admin-dashboard/reports" className="stat-card stat-card--link">
+          <i className="fas fa-chart-line"></i>
+          <div className="stat-info">
+            <span className="stat-value" aria-hidden="true">
+              <i className="fas fa-arrow-right" />
+            </span>
+            <span className="stat-label">Báo cáo thống kê</span>
+          </div>
+        </Link>
         <div className="stat-card">
           <i className="fas fa-box"></i>
           <div className="stat-info">

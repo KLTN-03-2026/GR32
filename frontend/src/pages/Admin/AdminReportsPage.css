@@ -1,0 +1,335 @@
+/* Báo cáo thống kê — US21 / PB21 */
+
+.rp-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.rp-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.rp-title-block h1 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #111;
+}
+
+.rp-sub {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.rp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.rp-seg {
+  display: inline-flex;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+.rp-seg button {
+  border: none;
+  background: transparent;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+}
+
+.rp-seg button:hover {
+  background: #f3f3f3;
+}
+
+.rp-seg button.active {
+  background: #111;
+  color: #fff;
+}
+
+.rp-picker {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fff;
+}
+
+.rp-export {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #111;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.rp-export:hover {
+  background: #333;
+}
+
+.rp-export:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rp-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 1100px) {
+  .rp-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .rp-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rp-kpi {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 18px 16px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.rp-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.rp-kpi-icon.rev {
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
+}
+
+.rp-kpi-icon.ord {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+}
+
+.rp-kpi-icon.cus {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+}
+
+.rp-kpi-icon.done {
+  background: linear-gradient(135deg, #ca8a04, #eab308);
+}
+
+.rp-kpi-body {
+  min-width: 0;
+}
+
+.rp-kpi-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.rp-kpi-value {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #111;
+  margin-top: 4px;
+  line-height: 1.2;
+}
+
+.rp-kpi-delta {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rp-kpi-delta.up {
+  color: #15803d;
+}
+
+.rp-kpi-delta.down {
+  color: #b91c1c;
+}
+
+.rp-kpi-delta.flat {
+  color: #737373;
+}
+
+.rp-charts {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 960px) {
+  .rp-charts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rp-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  padding: 16px 16px 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.rp-card h2 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #222;
+}
+
+.rp-chart-h {
+  height: 280px;
+}
+
+.rp-pie-wrap {
+  position: relative;
+  height: 280px;
+}
+
+.rp-pie-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -52%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.rp-pie-center strong {
+  display: block;
+  font-size: 1.1rem;
+  color: #111;
+}
+
+.rp-pie-center small {
+  color: #666;
+  font-size: 11px;
+}
+
+.rp-ranks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .rp-ranks {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rp-rank-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.rp-rank-card h3 {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.rp-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.rp-rank-num {
+  width: 22px;
+  font-weight: 800;
+  font-size: 13px;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.rp-rank-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.rp-rank-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rp-rank-meta {
+  font-size: 12px;
+  color: #666;
+}
+
+.rp-bar-track {
+  height: 6px;
+  border-radius: 4px;
+  background: #eee;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.rp-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #111, #444);
+  transition: width 0.35s ease;
+}
+
+.rp-err {
+  padding: 14px;
+  background: #fef2f2;
+  color: #991b1b;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.rp-loading {
+  padding: 40px;
+  text-align: center;
+  color: #666;
+}

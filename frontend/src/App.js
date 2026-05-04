@@ -23,6 +23,7 @@ import AdminCategoriesPage from "./pages/Admin/AdminCategoriesPage";
 import AdminBrandsPage from "./pages/Admin/AdminBrandsPage";
 import AdminAccountsPage from "./pages/Admin/AdminAccountsPage";
 import AdminCouponsPage from "./pages/Admin/AdminCouponsPage";
+import AdminReportsPage from "./pages/Admin/AdminReportsPage";
 import CartPage from "./pages/Cart/CartPage";
 import CheckoutPage from "./pages/Checkout/CheckoutPage";
 import VnpaySandboxPage from "./pages/Payment/VnpaySandboxPage";
@@ -103,6 +104,7 @@ function App() {
         {/* 5. HỆ THỐNG QUẢN TRỊ (Admin / Nhân viên) */}
         <Route path="/admin-dashboard" element={<AdminLayout />}>
           <Route index element={<AdminDashboardHome />} />
+          <Route path="reports" element={<AdminReportsPage />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="brands" element={<AdminBrandsPage />} />

@@ -1,5 +1,5 @@
 export const MSG_INVALID_VN_PHONE =
-  "Số điện thoại phải đúng 10 chữ số Việt Nam (bắt đầu bằng 0, ví dụ 0901234567).";
+  "Số điện thoại phải đúng 10 chữ số, bắt đầu bằng 0 (ví dụ 0901234567).";
 
 /** @returns {string|null} */
 export function normalizeVnPhone10(input) {

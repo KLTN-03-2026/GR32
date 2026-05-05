@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       validate: {
         validator: (v) => /^0\d{9}$/.test(String(v || "")),
-        message: "Số điện thoại phải là đúng 10 chữ số (bắt đầu bằng 0).",
+        message: "Số điện thoại phải đúng 10 chữ số (bắt đầu bằng 0).",
       },
     },
     dia_chi: { type: String, default: "" },

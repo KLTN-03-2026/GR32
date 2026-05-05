@@ -52,20 +52,23 @@
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.nav-link:hover {
-  color: #ffffff;
-  background: #000000;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.nav-link:hover,
+.nav-link:focus {
+  color: #000;
+  background: transparent;
+}
+
+.nav-link:hover::after,
+.nav-link:focus::after {
+  transform: scaleX(1);
 }
 
 /* Trang đang active */
 .nav-link.active {
-  color: #ffffff;
-  background: #000000;
-  border-color: #e0e0e0;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: #000;
+  background: transparent;
+  border-color: transparent;
+  font-weight: 700;
 }
 
 .nav-link.active::after {

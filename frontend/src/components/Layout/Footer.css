@@ -83,6 +83,17 @@
   line-height: 1.6;
 }
 
+.footer-support-link {
+  color: #e5e7eb;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-support-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
 .footer-col i {
   margin-right: 8px;
   color: #fff;

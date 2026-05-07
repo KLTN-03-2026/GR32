@@ -30,6 +30,8 @@ import CheckoutPage from "./pages/Checkout/CheckoutPage";
 import VnpaySandboxPage from "./pages/Payment/VnpaySandboxPage";
 import CategoryPage from "./pages/Category/CategoryPage";
 import Home from "./pages/Home/Home";
+import AboutPage from "./pages/Info/AboutPage";
+import SupportPage from "./pages/Info/SupportPage";
 import ProductDetail from "./pages/ProductDetail/ProductDetail";
 import ProductsPage from "./pages/Products/ProductsPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
@@ -88,8 +90,8 @@ function App() {
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/danh-muc/:slug" element={<CategoryPage />} />
-        <Route path="/ve-chung-toi" element={<Navigate to="/" replace />} />
-        <Route path="/ho-tro" element={<Navigate to="/" replace />} />
+        <Route path="/ve-chung-toi" element={<AboutPage />} />
+        <Route path="/ho-tro" element={<SupportPage />} />
 
         {/* 4. KHÁCH HÀNG */}
         <Route path="/profile" element={<ProfilePage />} />

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import "./Footer.css";
 
 const Footer = () => {
@@ -51,17 +52,30 @@ const Footer = () => {
             <i className="fas fa-phone"></i> 0906.532.622
           </p>
           <p>
-            <i className="fas fa-envelope"></i> contact@noname.vn
+            <i className="fas fa-envelope"></i> admin@noname.vn
           </p>
           <p>
-            <i className="fas fa-map-marker-alt"></i> TP. Đà Nẵng
+            <i className="fas fa-map-marker-alt"></i> H12/3 K456 đường Hoàng
+            Diệu, phường Hòa Cường, TP Đà Nẵng
           </p>
         </div>
         <div className="footer-col">
           <h4>Hỗ trợ</h4>
-          <p>Chính sách đổi hàng</p>
-          <p>Chính sách bảo hành</p>
-          <p>Hướng dẫn mua hàng</p>
+          <p>
+            <Link to="/ho-tro#doi-tra" className="footer-support-link">
+              Chính sách đổi hàng
+            </Link>
+          </p>
+          <p>
+            <Link to="/ho-tro#bao-hanh" className="footer-support-link">
+              Chính sách bảo hành
+            </Link>
+          </p>
+          <p>
+            <Link to="/ho-tro#huong-dan-mua-hang" className="footer-support-link">
+              Hướng dẫn mua hàng
+            </Link>
+          </p>
         </div>
         <div className="footer-col">
           <h4>Phương thức thanh toán</h4>

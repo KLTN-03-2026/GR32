@@ -1,9 +1,12 @@
 import axios from "axios";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import API_BASE from "../../config";
 import "./AdminChatbotPage.css";
 
 const API = `${API_BASE}/api/chat/admin`;
+
+/** Gần đáy khung chat → tin mới / poll sẽ tự cuộn xuống */
+const LIVE_NEAR_BOTTOM_PX = 100;
 
 const FAQ_DM_OPTIONS = [
   { value: "", label: "Tất cả danh mục" },
@@ -82,7 +85,53 @@ export default function AdminChatbotPage() {
   const [detail, setDetail] = useState(null);
   const [staffText, setStaffText] = useState("");
   const [sendingStaff, setSendingStaff] = useState(false);
+  const [showJumpLive, setShowJumpLive] = useState(false);
   const alertedRef = useRef(new Set());
+  const panelMsgsRef = useRef(null);
+  const stickLiveBottomRef = useRef(true);
+
+  const updateLiveScrollAnchoring = useCallback(() => {
+    const el = panelMsgsRef.current;
+    if (!el) return;
+    const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const nearBottom = gap <= LIVE_NEAR_BOTTOM_PX;
+    stickLiveBottomRef.current = nearBottom;
+    const overflow = el.scrollHeight > el.clientHeight + 12;
+    setShowJumpLive(Boolean(overflow && !nearBottom));
+  }, []);
+
+  const scrollLiveToLatest = useCallback(() => {
+    const el = panelMsgsRef.current;
+    if (!el) return;
+    stickLiveBottomRef.current = true;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    requestAnimationFrame(updateLiveScrollAnchoring);
+  }, [updateLiveScrollAnchoring]);
+
+  useLayoutEffect(() => {
+    if (!detail?.messages) return;
+    const el = panelMsgsRef.current;
+    if (!el) return;
+    if (stickLiveBottomRef.current) {
+      el.scrollTop = el.scrollHeight;
+    }
+    updateLiveScrollAnchoring();
+  }, [detail?.messages, detail?.session_token, updateLiveScrollAnchoring]);
+
+  useEffect(() => {
+    if (!selectedToken) return;
+    stickLiveBottomRef.current = true;
+    requestAnimationFrame(updateLiveScrollAnchoring);
+  }, [selectedToken, updateLiveScrollAnchoring]);
+
+  useEffect(() => {
+    if (!selectedToken || !detail) return;
+    const el = panelMsgsRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => updateLiveScrollAnchoring());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [selectedToken, detail, updateLiveScrollAnchoring]);
 
   useEffect(() => {
     const t = setTimeout(() => setFaqQ(faqInput.trim()), 420);
@@ -280,6 +329,7 @@ export default function AdminChatbotPage() {
       window.alert("Tối đa 500 ký tự.");
       return;
     }
+    stickLiveBottomRef.current = true;
     setSendingStaff(true);
     try {
       await axios.post(
@@ -504,25 +554,42 @@ export default function AdminChatbotPage() {
                   </div>
                 </div>
 
-                <div className="cb-live-panel-msgs">
-                  {(detail.messages || []).map((m, idx) => (
-                    <div
-                      key={`${idx}-${m.at}`}
-                      className={`cb-panel-msg ${m.role === "user" ? "user" : m.role === "staff" ? "staff" : "ai"}`}
-                    >
-                      <div className="cb-panel-msg-ava" aria-hidden />
-                      <div>
-                        <div className="cb-panel-msg-label">
-                          {m.role === "staff"
-                            ? "Nhân viên"
-                            : m.role === "user"
-                              ? "Khách"
-                              : "Trợ lý AI"}
+                <div className="cb-live-msgs-wrap">
+                  <div
+                    ref={panelMsgsRef}
+                    className="cb-live-panel-msgs"
+                    onScroll={updateLiveScrollAnchoring}
+                  >
+                    {(detail.messages || []).map((m, idx) => (
+                      <div
+                        key={`${idx}-${m.at}`}
+                        className={`cb-panel-msg ${m.role === "user" ? "user" : m.role === "staff" ? "staff" : "ai"}`}
+                      >
+                        <div className="cb-panel-msg-ava" aria-hidden />
+                        <div>
+                          <div className="cb-panel-msg-label">
+                            {m.role === "staff"
+                              ? "Nhân viên"
+                              : m.role === "user"
+                                ? "Khách"
+                                : "Trợ lý AI"}
+                          </div>
+                          <div className="cb-panel-msg-bubble">{m.content}</div>
                         </div>
-                        <div className="cb-panel-msg-bubble">{m.content}</div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  {showJumpLive && (
+                    <button
+                      type="button"
+                      className="cb-live-scroll-bottom-btn"
+                      aria-label="Xuống tin mới nhất"
+                      title="Xuống tin mới nhất"
+                      onClick={scrollLiveToLatest}
+                    >
+                      <i className="fas fa-chevron-down" aria-hidden />
+                    </button>
+                  )}
                 </div>
 
                 <div className="cb-live-panel-foot">

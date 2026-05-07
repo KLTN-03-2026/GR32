@@ -384,44 +384,6 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* ==================== CHATBOT BUTTON ==================== */
-.chatbot-fixed-btn {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  background: #333;
-  color: #fff;
-  padding: 12px 20px;
-  border-radius: 30px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  z-index: 999;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: scale(1);
-  animation: chatbotPulse 2s infinite;
-}
-
-@keyframes chatbotPulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-  }
-}
-
-.chatbot-fixed-btn:hover {
-  background: #555;
-  transform: scale(1.05);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-}
-
-/* ==================== SCROLL TO TOP ==================== */
 .scroll-top-btn {
   position: fixed;
   bottom: 90px;

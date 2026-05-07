@@ -21,12 +21,23 @@ const adminUserRoutes = require("./routes/adminUserRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const adminCouponRoutes = require("./routes/adminCouponRoutes");
 const adminReportRoutes = require("./routes/adminReportRoutes");
+const chatbotRoutes = require("./routes/chatbotRoutes");
 
 const app = express();
 
 // --- 2. MIDDLEWARE ---
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
+
+/** Docker / orchestration — không phụ thuộc DB */
+app.get("/health", (_req, res) => {
+  res.status(200).json({ ok: true });
+});
 
 // Phục vụ file ảnh upload
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
@@ -54,6 +65,7 @@ app.use("/api/admin/brands", adminBrandRoutes);
 app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/admin/coupons", adminCouponRoutes);
 app.use("/api/admin/reports", adminReportRoutes);
+app.use("/api/chat", chatbotRoutes);
 
 // --- 5. KHỞI CHẠY SERVER ---
 const PORT = process.env.PORT || 5000;

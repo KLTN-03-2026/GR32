@@ -23,6 +23,7 @@ import AdminCategoriesPage from "./pages/Admin/AdminCategoriesPage";
 import AdminBrandsPage from "./pages/Admin/AdminBrandsPage";
 import AdminAccountsPage from "./pages/Admin/AdminAccountsPage";
 import AdminCouponsPage from "./pages/Admin/AdminCouponsPage";
+import AdminChatbotPage from "./pages/Admin/AdminChatbotPage";
 import AdminReportsPage from "./pages/Admin/AdminReportsPage";
 import CartPage from "./pages/Cart/CartPage";
 import CheckoutPage from "./pages/Checkout/CheckoutPage";
@@ -114,6 +115,7 @@ function App() {
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
           <Route path="coupons" element={<AdminCouponsPage />} />
+          <Route path="chatbot" element={<AdminChatbotPage />} />
           <Route path="accounts" element={<AdminAccountsPage />} />
         </Route>
 

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
+import ChatbotWidget from "../../components/Chatbot/ChatbotWidget";
 import "./Home.css";
 
 const API_URL = `${API_BASE}/api/products`;
@@ -217,11 +218,7 @@ const Home = () => {
 
       <Footer />
 
-      {/* Chatbot AI Floating Button */}
-      <div className="chatbot-fixed-btn">
-        <i className="fas fa-comment-dots"></i>
-        <span>LIÊN HỆ</span>
-      </div>
+      <ChatbotWidget />
 
       {/* Scroll to Top */}
       {showScrollTop && (

@@ -8,6 +8,9 @@ RUN npm install
 
 COPY . .
 
+# Cùng origin với nginx — axios gọi /api/* và ảnh /uploads/* qua reverse proxy (docker-compose).
+ENV REACT_APP_API_URL=
+
 RUN npm run build
 
 FROM nginx:alpine

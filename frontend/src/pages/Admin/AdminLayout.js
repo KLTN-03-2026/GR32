@@ -128,6 +128,13 @@ const AdminLayout = () => {
             {sidebarOpen && <span>Quản lý mã giảm giá</span>}
           </Link>
           <Link
+            to="/admin-dashboard/chatbot"
+            className={`sidebar-link ${navActive("/admin-dashboard/chatbot") ? "active" : ""}`}
+          >
+            <i className="fas fa-robot"></i>
+            {sidebarOpen && <span>Quản lý Chatbot AI</span>}
+          </Link>
+          <Link
             to="/admin-dashboard/payments"
             className={`sidebar-link ${navActive("/admin-dashboard/payments") ? "active" : ""}`}
           >

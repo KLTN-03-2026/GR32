@@ -315,24 +315,50 @@
 
 .header-icons i {
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.2s ease, transform 0.2s ease, filter 0.2s ease;
   transform: scale(1);
 }
 
 .header-icons i:hover {
-  color: #222;
-  transform: scale(1.1);
+  color: #111;
+  transform: translateY(-1px) scale(1.12);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.18));
 }
 
 .cart-wrapper {
   position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.cart-wrapper:hover {
+  transform: translateY(-1px) scale(1.06);
+}
+
+.cart-wrapper:hover .fa-shopping-cart {
+  color: #111;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.18));
+}
+
+.header-icons .fa-tools:hover,
+.header-icons .fa-sign-out-alt:hover {
+  color: #000;
+}
+
+.header-account-trigger {
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.header-account-trigger:hover,
+.header-account-dropdown:hover .header-account-trigger {
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
 }
 
 .cart-count {
   position: absolute;
   top: -8px;
   right: -10px;
-  background: #222;
+  background: #e53935;
   color: #fff;
   font-size: 10px;
   padding: 2px 5px;

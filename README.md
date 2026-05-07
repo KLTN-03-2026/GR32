@@ -2,4 +2,4 @@ Chạy bằng docker : mở terminal tại thư mục gốc project và chạy c
 
 
 
-Hiện tại đã hoàn thành sprint 2 đang tiền hành code các chức năng của sprint 3
+Hiện tại đã tiền hành code các chức năng của sprint 3 

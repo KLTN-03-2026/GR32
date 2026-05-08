@@ -931,3 +931,254 @@ a.stat-card.stat-card--link:hover {
     flex-direction: column;
   }
 }
+
+/* ================================================================
+   DASHBOARD SECTIONS
+   ================================================================ */
+.dashboard-section {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.dashboard-section h3 {
+  font-size: 18px;
+  color: #222;
+  margin: 0 0 16px;
+  font-weight: 600;
+}
+
+.dashboard-section h4 {
+  font-size: 16px;
+  color: #222;
+  margin: 16px 0 12px;
+  font-weight: 600;
+}
+
+/* Chart Placeholder */
+.chart-placeholder {
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f9f9f9;
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  color: #888;
+}
+
+.chart-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #888;
+  font-size: 14px;
+}
+
+.chart-data {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chart-item {
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  font-size: 12px;
+}
+
+/* Recent Activities */
+.recent-activities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.activity-column h4 {
+  margin-bottom: 12px;
+  color: #555;
+}
+
+.activity-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 3px solid #ddd;
+}
+
+.activity-title {
+  font-weight: 600;
+  color: #222;
+  font-size: 14px;
+}
+
+.activity-meta {
+  color: #666;
+  font-size: 12px;
+}
+
+.activity-status {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #e3f2fd;
+  color: #1976d2;
+  align-self: flex-start;
+}
+
+/* Quick Actions */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: #f8f9fa;
+  color: #495057;
+  text-decoration: none;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+  color: #212529;
+}
+
+.action-btn i {
+  font-size: 18px;
+  color: #6c757d;
+}
+
+/* Alerts */
+.alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.alert-warning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+}
+
+.alert-danger {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+.alert-info {
+  background: #d1ecf1;
+  border: 1px solid #bee5eb;
+  color: #0c5460;
+}
+
+.alert-success {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+.alert i {
+  font-size: 16px;
+}
+
+/* Chatbot Stats */
+.chatbot-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-item .stat-label {
+  font-size: 13px;
+  color: #666;
+}
+
+.stat-item .stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+}
+
+.top-faqs {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 16px;
+}
+
+.faq-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.faq-question {
+  font-size: 14px;
+  color: #222;
+  flex: 1;
+}
+
+.faq-category {
+  font-size: 12px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
+  .recent-activities {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-section {
+    padding: 16px;
+  }
+}

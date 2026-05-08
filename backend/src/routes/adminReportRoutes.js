@@ -8,5 +8,6 @@ const auth = [authMiddleware, roleMiddleware("admin", "nhan_vien")];
 
 router.get("/", auth, ctrl.getReports);
 router.get("/export", auth, ctrl.exportReportsCsv);
+router.get("/overview", auth, ctrl.getDashboardOverview);
 
 module.exports = router;

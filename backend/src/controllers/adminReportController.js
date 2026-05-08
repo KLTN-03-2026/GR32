@@ -1,5 +1,10 @@
 const Order = require("../models/Order");
 const User = require("../models/User");
+const Product = require("../models/Product");
+const Review = require("../models/Review");
+const ChatSession = require("../models/ChatSession");
+const ChatbotFaq = require("../models/ChatbotFaq");
+const Coupon = require("../models/Coupon");
 
 const TZ = "Asia/Ho_Chi_Minh";
 
@@ -365,5 +370,164 @@ exports.exportReportsCsv = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Không xuất được báo cáo." });
+  }
+};
+
+exports.getDashboardOverview = async (req, res) => {
+  try {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thisWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Key Metrics
+    const [
+      revenueToday,
+      revenueThisWeek,
+      revenueThisMonth,
+      ordersToday,
+      ordersThisWeek,
+      ordersThisMonth,
+      ordersPending,
+      ordersProcessing,
+      ordersCompleted,
+      totalUsers,
+      newUsersThisMonth,
+      totalProducts,
+      productsInStock,
+      productsLowStock,
+    ] = await Promise.all([
+      sumRevenueNonCancelled(today, now),
+      sumRevenueNonCancelled(thisWeek, now),
+      sumRevenueNonCancelled(thisMonth, now),
+      Order.countDocuments({ createdAt: { $gte: today } }),
+      Order.countDocuments({ createdAt: { $gte: thisWeek } }),
+      Order.countDocuments({ createdAt: { $gte: thisMonth } }),
+      Order.countDocuments({ trang_thai_don: "cho_xu_ly" }),
+      Order.countDocuments({ trang_thai_don: { $in: ["dang_giao", "da_giao_hang"] } }),
+      Order.countDocuments({ trang_thai_don: "hoan_thanh" }),
+      User.countDocuments({ vai_tro: "khach_hang" }),
+      User.countDocuments({ vai_tro: "khach_hang", createdAt: { $gte: thisMonth } }),
+      Product.countDocuments(),
+      Product.countDocuments({ trang_thai: "dang_ban" }),
+      Product.countDocuments({ so_luong_ton: { $lt: 5 }, trang_thai: "dang_ban" }),
+    ]);
+
+    // Get top products separately
+    const topProducts = await topProductsByQty(thisMonth, now, 5);
+
+    // chart cột doanh thu theo tháng
+    const revenueChart = [];
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const revenue = await sumRevenueNonCancelled(date, new Date(nextMonth.getTime() - 1));
+      revenueChart.push({
+        month: `${date.getMonth() + 1}/${date.getFullYear()}`,
+        revenue,
+      });
+    }
+
+    // Recent Activities
+    const [recentOrders, recentReviews, recentUsers, pendingChats] = await Promise.all([
+      Order.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select("ma_don ho_va_ten tong_cong trang_thai_don createdAt")
+        .lean(),
+      Review.find({ trang_thai: "hien_thi" })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate("san_pham_id", "ten_san_pham")
+        .select("ho_ten so_sao noi_dung createdAt")
+        .lean(),
+      User.find({ vai_tro: "khach_hang" })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select("ho_va_ten email createdAt")
+        .lean(),
+      ChatSession.countDocuments({ handoff: true, staff_takeover: false }),
+    ]);
+
+    // Alerts
+    const [overdueOrders, expiringCoupons] = await Promise.all([
+      Order.countDocuments({
+        trang_thai_don: "cho_xu_ly",
+        createdAt: { $lt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000) },
+      }),
+      Coupon.countDocuments({
+        ngay_ket_thuc: { $gte: now, $lte: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) },
+        hien_thi: true,
+      }),
+    ]);
+
+    // Chatbot Stats
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const [chatSessionsToday, handoverRate, topFaqs, orderStatus] = await Promise.all([
+      ChatSession.countDocuments({ createdAt: { $gte: todayStart } }),
+      (async () => {
+        const total = await ChatSession.countDocuments({ createdAt: { $gte: thisMonth } });
+        const handovers = await ChatSession.countDocuments({
+          createdAt: { $gte: thisMonth },
+          handoff: true,
+        });
+        return total > 0 ? Math.round((handovers / total) * 100) : 0;
+      })(),
+      ChatbotFaq.find({ hoat_dong: true })
+        .sort({ thu_tu: 1 })
+        .limit(5)
+        .select("cau_hoi_mau danh_muc")
+        .lean(),
+      orderStatusDistribution(thisMonth, now),
+    ]);
+
+    res.json({
+      keyMetrics: {
+        revenue: {
+          today: revenueToday,
+          thisWeek: revenueThisWeek,
+          thisMonth: revenueThisMonth,
+        },
+        orders: {
+          today: ordersToday,
+          thisWeek: ordersThisWeek,
+          thisMonth: ordersThisMonth,
+          pending: ordersPending,
+          processing: ordersProcessing,
+          completed: ordersCompleted,
+        },
+        customers: {
+          total: totalUsers,
+          newThisMonth: newUsersThisMonth,
+        },
+        products: {
+          total: totalProducts,
+          inStock: productsInStock,
+          lowStock: productsLowStock,
+          topSelling: topProducts,
+        },
+      },
+      revenueChart,
+      orderStatus,
+      recentActivities: {
+        orders: recentOrders,
+        reviews: recentReviews,
+        users: recentUsers,
+        pendingChats,
+      },
+      alerts: {
+        lowStockProducts: productsLowStock,
+        overdueOrders,
+        expiringCoupons,
+      },
+      chatbotStats: {
+        sessionsToday: chatSessionsToday,
+        handoverRate,
+        topFaqs,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Không tải được dữ liệu dashboard." });
   }
 };

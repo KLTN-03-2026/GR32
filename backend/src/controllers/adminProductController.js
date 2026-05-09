@@ -416,12 +416,21 @@ async function deleteFile(filePath) {
   }
 }
 
-/** Chuẩn hoá giá trị từ client (Mongo có thể lưu full URL từ máy khác) → chỉ nhận /uploads/... */
+/** Chuẩn hoá giá trị từ client → hỗ trợ cả Cloudinary URLs và /uploads/... */
 function normalizeUploadRef(stored) {
   if (!stored || typeof stored !== "string") return null;
   const s = stored.trim().replace(/\\/g, "/");
   if (!s || s.includes("..")) return null;
+
+  // Cloudinary URLs - return as-is
+  if (/^https:\/\/res\.cloudinary\.com/i.test(s)) {
+    return s;
+  }
+
+  // Local /uploads/ paths
   if (s.startsWith("/uploads/")) return s;
+
+  // Other external URLs - try to extract /uploads/ pathname
   try {
     if (/^https?:\/\//i.test(s)) {
       const pathname = new URL(s).pathname;

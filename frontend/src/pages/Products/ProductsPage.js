@@ -2,6 +2,7 @@ import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
 import "./ProductsPage.css";
@@ -330,7 +331,7 @@ const ProductsPage = () => {
                 >
                   <div className="p-card-img">
                     <img
-                      src={item.hinh_anh || "https://via.placeholder.com/300x400"}
+                      src={resolveMediaUrl(item.hinh_anh) || "https://via.placeholder.com/300x400"}
                       alt={item.ten_san_pham}
                     />
                     {item.phan_tram_giam_gia > 0 && (

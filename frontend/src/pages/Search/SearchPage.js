@@ -2,6 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import API_BASE from "../../config";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import Header from "../../components/Layout/Header";
 import "./SearchPage.css";
 
@@ -130,7 +131,7 @@ const SearchPage = () => {
               >
                 <div className="item-thumb">
                   <img
-                    src={item.hinh_anh || "https://via.placeholder.com/300x400"}
+                    src={resolveMediaUrl(item.hinh_anh) || "https://via.placeholder.com/300x400"}
                     alt={item.ten_san_pham}
                   />
                   {item.phan_tram_giam_gia > 0 && (

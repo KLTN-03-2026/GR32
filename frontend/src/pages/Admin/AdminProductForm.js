@@ -2,25 +2,76 @@ import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import API_BASE from "../../config";
+import {
+  normalizeStoredUploadPath,
+  resolveMediaUrl,
+} from "../../utils/mediaUrl";
+
+const MISSING_IMG_SRC =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect fill="#eee" width="100%" height="100%"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#999" font-size="12" font-family="sans-serif">Không tải ảnh</text></svg>',
+  );
 
 const API = `${API_BASE}/api/admin/products`;
 
 const DANH_MUC_FALLBACK = [
-  "Áo thun nam", "Áo polo nam", "Quần jean nam", "Quần short nam",
-  "Áo thun nữ", "Đầm / Váy", "Quần nữ", "Áo khoác nữ",
-  "Mũ / Nón", "Túi xách", "Thắt lưng", "Giày dép",
-  "Áo khoác nam", "Áo sơ mi nam", "Áo sơ mi nữ",
+  "Áo thun nam",
+  "Áo polo nam",
+  "Quần jean nam",
+  "Quần short nam",
+  "Áo thun nữ",
+  "Đầm / Váy",
+  "Quần nữ",
+  "Áo khoác nữ",
+  "Mũ / Nón",
+  "Túi xách",
+  "Thắt lưng",
+  "Giày dép",
+  "Áo khoác nam",
+  "Áo sơ mi nam",
+  "Áo sơ mi nữ",
 ];
 
 const THUONG_HIEU_FALLBACK = ["NO NAME"];
 
-const MAU_SAC_LIST = ["Đen", "Trắng", "Xanh navy", "Xám", "Be", "Nâu", "Đỏ", "Hồng", "Xanh lá", "Kẻ caro"];
-const KICH_CO_LIST = ["S", "M", "L", "XL", "XXL", "29", "30", "31", "32", "33", "34"];
+const MAU_SAC_LIST = [
+  "Đen",
+  "Trắng",
+  "Xanh navy",
+  "Xám",
+  "Be",
+  "Nâu",
+  "Đỏ",
+  "Hồng",
+  "Xanh lá",
+  "Kẻ caro",
+];
+const KICH_CO_LIST = [
+  "S",
+  "M",
+  "L",
+  "XL",
+  "XXL",
+  "29",
+  "30",
+  "31",
+  "32",
+  "33",
+  "34",
+];
 
 const emptyForm = {
-  ten_san_pham: "", mo_ta: "", thuong_hieu: "", danh_muc: "",
-  gioi_tinh: "Unisex", chat_lieu: "", kieu_dang: "", huong_dan_bao_quan: "",
-  gia_goc: "", phan_tram_giam_gia: "0",
+  ten_san_pham: "",
+  mo_ta: "",
+  thuong_hieu: "",
+  danh_muc: "",
+  gioi_tinh: "Unisex",
+  chat_lieu: "",
+  kieu_dang: "",
+  huong_dan_bao_quan: "",
+  gia_goc: "",
+  phan_tram_giam_gia: "0",
   trang_thai: "dang_ban",
 };
 
@@ -38,7 +89,8 @@ const AdminProductForm = () => {
   const [anhDaiDienPreview, setAnhDaiDienPreview] = useState("");
   const [anhChiTiet, setAnhChiTiet] = useState([]);
   const [anhChiTietPreviews, setAnhChiTietPreviews] = useState([]);
-  const [existingAnhChiTiet, setExistingAnhChiTiet] = useState([]);
+  /** Ảnh chi tiết đã có trên server: path chuẩn /uploads/... + URL xem được trên máy hiện tại */
+  const [existingChiTiet, setExistingChiTiet] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -64,7 +116,9 @@ const AdminProductForm = () => {
       .then((res) => {
         const items = res.data.items;
         if (!cancelled && Array.isArray(items) && items.length > 0) {
-          setCategoryOptions(items.map((c) => ({ _id: c._id, ten_danh_muc: c.ten_danh_muc })));
+          setCategoryOptions(
+            items.map((c) => ({ _id: c._id, ten_danh_muc: c.ten_danh_muc })),
+          );
         }
       })
       .catch(() => {});
@@ -84,7 +138,12 @@ const AdminProductForm = () => {
       .then((res) => {
         const items = res.data.items;
         if (!cancelled && Array.isArray(items) && items.length > 0) {
-          setBrandOptions(items.map((b) => ({ _id: b._id, ten_thuong_hieu: b.ten_thuong_hieu })));
+          setBrandOptions(
+            items.map((b) => ({
+              _id: b._id,
+              ten_thuong_hieu: b.ten_thuong_hieu,
+            })),
+          );
         }
       })
       .catch(() => {});
@@ -96,21 +155,35 @@ const AdminProductForm = () => {
   const danhMucSelectOptions = useMemo(() => {
     const has = categoryOptions.some((c) => c.ten_danh_muc === form.danh_muc);
     if (!has && form.danh_muc) {
-      return [{ _id: `legacy-${form.danh_muc}`, ten_danh_muc: form.danh_muc }, ...categoryOptions];
+      return [
+        { _id: `legacy-${form.danh_muc}`, ten_danh_muc: form.danh_muc },
+        ...categoryOptions,
+      ];
     }
     return categoryOptions;
   }, [categoryOptions, form.danh_muc]);
 
   const thuongHieuSelectOptions = useMemo(() => {
-    const has = brandOptions.some((b) => b.ten_thuong_hieu === form.thuong_hieu);
+    const has = brandOptions.some(
+      (b) => b.ten_thuong_hieu === form.thuong_hieu,
+    );
     if (!has && form.thuong_hieu) {
-      return [{ _id: `legacy-${form.thuong_hieu}`, ten_thuong_hieu: form.thuong_hieu }, ...brandOptions];
+      return [
+        {
+          _id: `legacy-${form.thuong_hieu}`,
+          ten_thuong_hieu: form.thuong_hieu,
+        },
+        ...brandOptions,
+      ];
     }
     return brandOptions;
   }, [brandOptions, form.thuong_hieu]);
 
   const loadProduct = useCallback(async () => {
-    if (!id) return;
+    if (!id) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await axios.get(`${API}/${id}`, { headers });
@@ -130,36 +203,56 @@ const AdminProductForm = () => {
       });
 
       if (p.hinh_anh) {
-        const src = p.hinh_anh.startsWith("/uploads/") ? `${API_BASE}${p.hinh_anh}` : p.hinh_anh;
-        setAnhDaiDienPreview(src);
+        setAnhDaiDienPreview(resolveMediaUrl(p.hinh_anh));
       }
 
       if (p.danh_sach_anh?.length) {
-        setExistingAnhChiTiet(
-          p.danh_sach_anh.map((a) => (a.startsWith("/uploads/") ? `${API_BASE}${a}` : a))
+        setExistingChiTiet(
+          p.danh_sach_anh
+            .map((raw) => {
+              // For Cloudinary URLs, use raw directly
+              if (raw.startsWith("https://res.cloudinary.com")) {
+                return { pathRel: raw, previewUrl: resolveMediaUrl(raw) };
+              }
+              // For local paths, use normalizeStoredUploadPath
+              const pathRel = normalizeStoredUploadPath(raw);
+              if (!pathRel) return null;
+              return { pathRel, previewUrl: resolveMediaUrl(pathRel) };
+            })
+            .filter(Boolean),
         );
+      } else {
+        setExistingChiTiet([]);
       }
 
       if (p.bien_the?.length) {
-        const colors = [...new Set(p.bien_the.map((v) => v.mau_sac).filter(Boolean))];
-        const sizes = [...new Set(p.bien_the.map((v) => v.kich_co).filter(Boolean))];
+        const colors = [
+          ...new Set(p.bien_the.map((v) => v.mau_sac).filter(Boolean)),
+        ];
+        const sizes = [
+          ...new Set(p.bien_the.map((v) => v.kich_co).filter(Boolean)),
+        ];
         setMauSacInput(colors);
         setKichCoInput(sizes);
-        setBienThe(p.bien_the.map((v, i) => {
-          let sku = v.ma_sku || "";
-          if (!sku) {
-            const prefix = (v.mau_sac || "X").substring(0, 2).toUpperCase() + (v.kich_co || "0");
-            sku = `${prefix}-${Date.now().toString().slice(-4)}${i}`;
-          }
-          return {
-            mau_sac: v.mau_sac || "",
-            kich_co: v.kich_co || "",
-            so_luong: v.so_luong || 0,
-            ma_sku: sku,
-            gia_goc: v.gia_goc || p.gia_goc || "",
-            gia_ban: v.gia_ban || p.gia_hien_tai || "",
-          };
-        }));
+        setBienThe(
+          p.bien_the.map((v, i) => {
+            let sku = v.ma_sku || "";
+            if (!sku) {
+              const prefix =
+                (v.mau_sac || "X").substring(0, 2).toUpperCase() +
+                (v.kich_co || "0");
+              sku = `${prefix}-${Date.now().toString().slice(-4)}${i}`;
+            }
+            return {
+              mau_sac: v.mau_sac || "",
+              kich_co: v.kich_co || "",
+              so_luong: v.so_luong || 0,
+              ma_sku: sku,
+              gia_goc: v.gia_goc || p.gia_goc || "",
+              gia_ban: v.gia_ban || p.gia_hien_tai || "",
+            };
+          }),
+        );
       }
     } catch {
       setError("Không tải được sản phẩm!");
@@ -168,7 +261,24 @@ const AdminProductForm = () => {
     }
   }, [id]);
 
-  useEffect(() => { loadProduct(); }, [loadProduct]);
+  useEffect(() => {
+    loadProduct();
+  }, [loadProduct]);
+
+  /** Chuyển từ sửa → thêm mới: xoá state cũ (không có id trong URL). */
+  useEffect(() => {
+    if (id) return;
+    setForm({ ...emptyForm });
+    setBienThe([]);
+    setMauSacInput([]);
+    setKichCoInput([]);
+    setAnhDaiDien(null);
+    setAnhDaiDienPreview("");
+    setAnhChiTiet([]);
+    setAnhChiTietPreviews([]);
+    setExistingChiTiet([]);
+    setError("");
+  }, [id]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -183,13 +293,19 @@ const AdminProductForm = () => {
 
   const handleAnhChiTiet = (e) => {
     const files = Array.from(e.target.files);
-    const totalCurrent = existingAnhChiTiet.length + anhChiTiet.length;
+    const totalCurrent = existingChiTiet.length + anhChiTiet.length;
     const remaining = 5 - totalCurrent;
-    if (remaining <= 0) { alert("Tối đa 5 ảnh chi tiết!"); return; }
+    if (remaining <= 0) {
+      alert("Tối đa 5 ảnh chi tiết!");
+      return;
+    }
 
     const toAdd = files.slice(0, remaining);
     setAnhChiTiet((prev) => [...prev, ...toAdd]);
-    setAnhChiTietPreviews((prev) => [...prev, ...toAdd.map((f) => URL.createObjectURL(f))]);
+    setAnhChiTietPreviews((prev) => [
+      ...prev,
+      ...toAdd.map((f) => URL.createObjectURL(f)),
+    ]);
   };
 
   const removeNewAnhChiTiet = (index) => {
@@ -197,19 +313,19 @@ const AdminProductForm = () => {
     setAnhChiTietPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const removeExistingAnhChiTiet = (index) => {
-    setExistingAnhChiTiet((prev) => prev.filter((_, i) => i !== index));
+  const removeExistingChiTiet = (index) => {
+    setExistingChiTiet((prev) => prev.filter((_, i) => i !== index));
   };
 
   const toggleMauSac = (color) => {
     setMauSacInput((prev) =>
-      prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
+      prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color],
     );
   };
 
   const toggleKichCo = (size) => {
     setKichCoInput((prev) =>
-      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
     );
   };
 
@@ -267,12 +383,27 @@ const AdminProductForm = () => {
     try {
       const formData = new FormData();
 
+      const keptDetailPaths = existingChiTiet.map((x) => x.pathRel);
+
       const dataPayload = {
         ...form,
         bien_the: bienThe,
-        giu_anh_cu: existingAnhChiTiet.length > 0,
+        ...(isEdit ? { anh_chi_tiet_giu_lai: keptDetailPaths } : {}),
       };
       formData.append("data", JSON.stringify(dataPayload));
+
+      if (!isEdit && !anhDaiDien) {
+        setError("Vui lòng chọn ảnh đại diện!");
+        setSubmitting(false);
+        return;
+      }
+
+      const detailTotal = keptDetailPaths.length + anhChiTiet.length;
+      if (detailTotal < 1) {
+        setError("Cần ít nhất 1 ảnh chi tiết (giữ ảnh cũ hoặc upload mới).");
+        setSubmitting(false);
+        return;
+      }
 
       if (anhDaiDien) {
         formData.append("hinh_anh", anhDaiDien);
@@ -292,7 +423,15 @@ const AdminProductForm = () => {
       alert(res.data.message);
       navigate("/admin-dashboard/products");
     } catch (err) {
-      setError(err.response?.data?.message || "Lỗi lưu sản phẩm!");
+      const st = err.response?.status;
+      const d = err.response?.data;
+      const apiMsg =
+        d && typeof d === "object" && d.message ? String(d.message) : null;
+      const oversized =
+        st === 413
+          ? "Dữ liệu gửi lên quá lớn (thường do ảnh). Giảm dung lượng ảnh hoặc chạy lại frontend Docker sau khi cập nhật nginx."
+          : null;
+      setError(apiMsg || oversized || err.message || "Lỗi lưu sản phẩm!");
     } finally {
       setSubmitting(false);
     }
@@ -303,30 +442,51 @@ const AdminProductForm = () => {
   return (
     <div className="admin-product-form">
       <div className="apf-header">
-        <button className="btn-back" onClick={() => navigate("/admin-dashboard/products")}>
+        <button
+          className="btn-back"
+          onClick={() => navigate("/admin-dashboard/products")}
+        >
           <i className="fas fa-arrow-left"></i> Quay lại
         </button>
         <h2>{isEdit ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}</h2>
       </div>
 
-      {error && <div className="apf-error"><i className="fas fa-exclamation-circle"></i> {error}</div>}
+      {error && (
+        <div className="apf-error">
+          <i className="fas fa-exclamation-circle"></i> {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="apf-form">
         {/* === SECTION 1: THÔNG TIN CHUNG === */}
         <div className="apf-section">
-          <h3><i className="fas fa-info-circle"></i> Thông tin chung</h3>
+          <h3>
+            <i className="fas fa-info-circle"></i> Thông tin chung
+          </h3>
 
           <div className="apf-row">
             <div className="apf-field full">
-              <label>Tên sản phẩm <span className="required">*</span></label>
-              <input type="text" value={form.ten_san_pham} onChange={(e) => handleChange("ten_san_pham", e.target.value)} placeholder="Nhập tên sản phẩm" />
+              <label>
+                Tên sản phẩm <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.ten_san_pham}
+                onChange={(e) => handleChange("ten_san_pham", e.target.value)}
+                placeholder="Nhập tên sản phẩm"
+              />
             </div>
           </div>
 
           <div className="apf-row three-cols">
             <div className="apf-field">
-              <label>Thương hiệu <span className="required">*</span></label>
-              <select value={form.thuong_hieu} onChange={(e) => handleChange("thuong_hieu", e.target.value)}>
+              <label>
+                Thương hiệu <span className="required">*</span>
+              </label>
+              <select
+                value={form.thuong_hieu}
+                onChange={(e) => handleChange("thuong_hieu", e.target.value)}
+              >
                 <option value="">-- Chọn thương hiệu --</option>
                 {thuongHieuSelectOptions.map((b) => (
                   <option key={b._id} value={b.ten_thuong_hieu}>
@@ -336,8 +496,13 @@ const AdminProductForm = () => {
               </select>
             </div>
             <div className="apf-field">
-              <label>Danh mục <span className="required">*</span></label>
-              <select value={form.danh_muc} onChange={(e) => handleChange("danh_muc", e.target.value)}>
+              <label>
+                Danh mục <span className="required">*</span>
+              </label>
+              <select
+                value={form.danh_muc}
+                onChange={(e) => handleChange("danh_muc", e.target.value)}
+              >
                 <option value="">-- Chọn danh mục --</option>
                 {danhMucSelectOptions.map((c) => (
                   <option key={c._id} value={c.ten_danh_muc}>
@@ -347,8 +512,13 @@ const AdminProductForm = () => {
               </select>
             </div>
             <div className="apf-field">
-              <label>Giới tính <span className="required">*</span></label>
-              <select value={form.gioi_tinh} onChange={(e) => handleChange("gioi_tinh", e.target.value)}>
+              <label>
+                Giới tính <span className="required">*</span>
+              </label>
+              <select
+                value={form.gioi_tinh}
+                onChange={(e) => handleChange("gioi_tinh", e.target.value)}
+              >
                 <option value="Nam">Nam</option>
                 <option value="Nữ">Nữ</option>
                 <option value="Unisex">Unisex</option>
@@ -360,12 +530,20 @@ const AdminProductForm = () => {
             <div className="apf-row">
               <div className="apf-field full">
                 <label>Trạng thái bán hàng</label>
-                <select value={form.trang_thai} onChange={(e) => handleChange("trang_thai", e.target.value)}>
-                  <option value="dang_ban">Đang bán (hiển thị cho khách)</option>
-                  <option value="ngung_ban">Ngừng bán (ẩn khỏi shop; vẫn lưu trong CSDL)</option>
+                <select
+                  value={form.trang_thai}
+                  onChange={(e) => handleChange("trang_thai", e.target.value)}
+                >
+                  <option value="dang_ban">
+                    Đang bán (hiển thị cho khách)
+                  </option>
+                  <option value="ngung_ban">
+                    Ngừng bán (ẩn khỏi shop; vẫn lưu trong CSDL)
+                  </option>
                 </select>
                 <p className="apf-hint">
-                  Có thể chuyển qua lại bất cứ lúc nào. Để xóa hẳn bản ghi khỏi CSDL, dùng nút &quot;Xóa CSDL&quot; ở danh sách sản phẩm.
+                  Có thể chuyển qua lại bất cứ lúc nào. Để xóa hẳn bản ghi khỏi
+                  CSDL, dùng nút &quot;Xóa CSDL&quot; ở danh sách sản phẩm.
                 </p>
               </div>
             </div>
@@ -373,56 +551,113 @@ const AdminProductForm = () => {
 
           <div className="apf-row">
             <div className="apf-field full">
-              <label>Mô tả <span className="required">*</span></label>
-              <textarea rows={3} value={form.mo_ta} onChange={(e) => handleChange("mo_ta", e.target.value)} placeholder="Mô tả sản phẩm..." />
+              <label>
+                Mô tả <span className="required">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={form.mo_ta}
+                onChange={(e) => handleChange("mo_ta", e.target.value)}
+                placeholder="Mô tả sản phẩm..."
+              />
             </div>
           </div>
 
           <div className="apf-row two-cols">
             <div className="apf-field">
-              <label>Giá gốc (VNĐ) <span className="required">*</span></label>
-              <input type="number" min="0" value={form.gia_goc} onChange={(e) => handleChange("gia_goc", e.target.value)} placeholder="VD: 500000" />
+              <label>
+                Giá gốc (VNĐ) <span className="required">*</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={form.gia_goc}
+                onChange={(e) => handleChange("gia_goc", e.target.value)}
+                placeholder="VD: 500000"
+              />
             </div>
             <div className="apf-field">
               <label>Phần trăm giảm giá (%)</label>
-              <input type="number" min="0" max="99" value={form.phan_tram_giam_gia} onChange={(e) => handleChange("phan_tram_giam_gia", e.target.value)} placeholder="0" />
+              <input
+                type="number"
+                min="0"
+                max="99"
+                value={form.phan_tram_giam_gia}
+                onChange={(e) =>
+                  handleChange("phan_tram_giam_gia", e.target.value)
+                }
+                placeholder="0"
+              />
             </div>
           </div>
         </div>
 
         {/* === SECTION 2: THUỘC TÍNH THỜI TRANG === */}
         <div className="apf-section">
-          <h3><i className="fas fa-tshirt"></i> Thuộc tính thời trang (Dữ liệu cho AI Chatbot)</h3>
+          <h3>
+            <i className="fas fa-tshirt"></i> Thuộc tính thời trang (Dữ liệu cho
+            AI Chatbot)
+          </h3>
 
           <div className="apf-row two-cols">
             <div className="apf-field">
-              <label>Chất liệu <span className="required">*</span></label>
-              <input type="text" value={form.chat_lieu} onChange={(e) => handleChange("chat_lieu", e.target.value)} placeholder="VD: Cotton 100%" />
+              <label>
+                Chất liệu <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.chat_lieu}
+                onChange={(e) => handleChange("chat_lieu", e.target.value)}
+                placeholder="VD: Cotton 100%"
+              />
             </div>
             <div className="apf-field">
-              <label>Kiểu dáng / Form <span className="required">*</span></label>
-              <input type="text" value={form.kieu_dang} onChange={(e) => handleChange("kieu_dang", e.target.value)} placeholder="VD: Regular Fit" />
+              <label>
+                Kiểu dáng / Form <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.kieu_dang}
+                onChange={(e) => handleChange("kieu_dang", e.target.value)}
+                placeholder="VD: Regular Fit"
+              />
             </div>
           </div>
 
           <div className="apf-row">
             <div className="apf-field full">
-              <label>Hướng dẫn bảo quản <span className="required">*</span></label>
-              <textarea rows={2} value={form.huong_dan_bao_quan} onChange={(e) => handleChange("huong_dan_bao_quan", e.target.value)} placeholder="VD: Giặt máy ở nhiệt độ thường, không dùng chất tẩy mạnh..." />
+              <label>
+                Hướng dẫn bảo quản <span className="required">*</span>
+              </label>
+              <textarea
+                rows={2}
+                value={form.huong_dan_bao_quan}
+                onChange={(e) =>
+                  handleChange("huong_dan_bao_quan", e.target.value)
+                }
+                placeholder="VD: Giặt máy ở nhiệt độ thường, không dùng chất tẩy mạnh..."
+              />
             </div>
           </div>
         </div>
 
         {/* === SECTION 3: BIẾN THỂ === */}
         <div className="apf-section">
-          <h3><i className="fas fa-layer-group"></i> Biến thể sản phẩm (SKU)</h3>
+          <h3>
+            <i className="fas fa-layer-group"></i> Biến thể sản phẩm (SKU)
+          </h3>
 
           <div className="apf-row two-cols">
             <div className="apf-field">
               <label>Chọn màu sắc</label>
               <div className="apf-chip-list">
                 {MAU_SAC_LIST.map((c) => (
-                  <button type="button" key={c} className={`apf-chip ${mauSacInput.includes(c) ? "active" : ""}`} onClick={() => toggleMauSac(c)}>
+                  <button
+                    type="button"
+                    key={c}
+                    className={`apf-chip ${mauSacInput.includes(c) ? "active" : ""}`}
+                    onClick={() => toggleMauSac(c)}
+                  >
                     {c}
                   </button>
                 ))}
@@ -432,7 +667,12 @@ const AdminProductForm = () => {
               <label>Chọn kích cỡ</label>
               <div className="apf-chip-list">
                 {KICH_CO_LIST.map((s) => (
-                  <button type="button" key={s} className={`apf-chip ${kichCoInput.includes(s) ? "active" : ""}`} onClick={() => toggleKichCo(s)}>
+                  <button
+                    type="button"
+                    key={s}
+                    className={`apf-chip ${kichCoInput.includes(s) ? "active" : ""}`}
+                    onClick={() => toggleKichCo(s)}
+                  >
                     {s}
                   </button>
                 ))}
@@ -440,8 +680,14 @@ const AdminProductForm = () => {
             </div>
           </div>
 
-          <button type="button" className="btn-generate-variants" onClick={generateBienThe}>
-            <i className="fas fa-sync-alt"></i> Tạo bảng biến thể ({mauSacInput.length} màu × {kichCoInput.length} size = {mauSacInput.length * kichCoInput.length} tổ hợp)
+          <button
+            type="button"
+            className="btn-generate-variants"
+            onClick={generateBienThe}
+          >
+            <i className="fas fa-sync-alt"></i> Tạo bảng biến thể (
+            {mauSacInput.length} màu × {kichCoInput.length} size ={" "}
+            {mauSacInput.length * kichCoInput.length} tổ hợp)
           </button>
 
           {bienThe.length > 0 && (
@@ -463,11 +709,55 @@ const AdminProductForm = () => {
                     <tr key={i}>
                       <td>{bt.mau_sac}</td>
                       <td>{bt.kich_co}</td>
-                      <td><input type="text" value={bt.ma_sku} onChange={(e) => updateBienThe(i, "ma_sku", e.target.value)} /></td>
-                      <td><input type="number" min="0" value={bt.so_luong} onChange={(e) => updateBienThe(i, "so_luong", e.target.value)} /></td>
-                      <td><input type="number" min="0" value={bt.gia_goc} onChange={(e) => updateBienThe(i, "gia_goc", e.target.value)} placeholder={form.gia_goc || "0"} /></td>
-                      <td><input type="number" min="0" value={bt.gia_ban} onChange={(e) => updateBienThe(i, "gia_ban", e.target.value)} /></td>
-                      <td><button type="button" className="btn-remove-variant" onClick={() => removeBienThe(i)}><i className="fas fa-times"></i></button></td>
+                      <td>
+                        <input
+                          type="text"
+                          value={bt.ma_sku}
+                          onChange={(e) =>
+                            updateBienThe(i, "ma_sku", e.target.value)
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          min="0"
+                          value={bt.so_luong}
+                          onChange={(e) =>
+                            updateBienThe(i, "so_luong", e.target.value)
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          min="0"
+                          value={bt.gia_goc}
+                          onChange={(e) =>
+                            updateBienThe(i, "gia_goc", e.target.value)
+                          }
+                          placeholder={form.gia_goc || "0"}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          min="0"
+                          value={bt.gia_ban}
+                          onChange={(e) =>
+                            updateBienThe(i, "gia_ban", e.target.value)
+                          }
+                        />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn-remove-variant"
+                          onClick={() => removeBienThe(i)}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -478,32 +768,74 @@ const AdminProductForm = () => {
 
         {/* === SECTION 4: HÌNH ẢNH === */}
         <div className="apf-section">
-          <h3><i className="fas fa-images"></i> Hình ảnh</h3>
+          <h3>
+            <i className="fas fa-images"></i> Hình ảnh
+          </h3>
 
           <div className="apf-row two-cols">
             <div className="apf-field">
-              <label>Ảnh đại diện <span className="required">*</span> (.jpg, .png)</label>
-              <input type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleAnhDaiDien} />
+              <label>
+                Ảnh đại diện <span className="required">*</span> (.jpg, .png)
+              </label>
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp"
+                onChange={handleAnhDaiDien}
+              />
               {anhDaiDienPreview && (
                 <div className="apf-img-preview">
-                  <img src={anhDaiDienPreview} alt="Preview" />
+                  <img
+                    src={anhDaiDienPreview}
+                    alt="Preview"
+                    onError={(ev) => {
+                      ev.currentTarget.onerror = null;
+                      ev.currentTarget.src = MISSING_IMG_SRC;
+                    }}
+                  />
                 </div>
               )}
             </div>
             <div className="apf-field">
-              <label>Ảnh chi tiết (1–5 ảnh) <span className="required">*</span></label>
-              <input type="file" accept=".jpg,.jpeg,.png,.webp" multiple onChange={handleAnhChiTiet} />
+              <label>
+                Ảnh chi tiết (1–5 ảnh) <span className="required">*</span>
+              </label>
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp"
+                multiple
+                onChange={handleAnhChiTiet}
+              />
               <div className="apf-img-list">
-                {existingAnhChiTiet.map((src, i) => (
-                  <div key={`ex-${i}`} className="apf-img-thumb">
-                    <img src={src} alt="" />
-                    <button type="button" onClick={() => removeExistingAnhChiTiet(i)}><i className="fas fa-times"></i></button>
+                {existingChiTiet.map((item, i) => (
+                  <div
+                    key={`ex-${item.pathRel}-${i}`}
+                    className="apf-img-thumb"
+                  >
+                    <img
+                      src={item.previewUrl}
+                      alt=""
+                      onError={(ev) => {
+                        ev.currentTarget.onerror = null;
+                        ev.currentTarget.src = MISSING_IMG_SRC;
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeExistingChiTiet(i)}
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
                   </div>
                 ))}
                 {anhChiTietPreviews.map((src, i) => (
                   <div key={`new-${i}`} className="apf-img-thumb">
                     <img src={src} alt="" />
-                    <button type="button" onClick={() => removeNewAnhChiTiet(i)}><i className="fas fa-times"></i></button>
+                    <button
+                      type="button"
+                      onClick={() => removeNewAnhChiTiet(i)}
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
                   </div>
                 ))}
               </div>
@@ -513,11 +845,23 @@ const AdminProductForm = () => {
 
         {/* === SUBMIT === */}
         <div className="apf-submit-row">
-          <button type="button" className="btn-cancel-form" onClick={() => navigate("/admin-dashboard/products")}>
+          <button
+            type="button"
+            className="btn-cancel-form"
+            onClick={() => navigate("/admin-dashboard/products")}
+          >
             Hủy bỏ
           </button>
-          <button type="submit" className="btn-save-product" disabled={submitting}>
-            {submitting ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Thêm sản phẩm"}
+          <button
+            type="submit"
+            className="btn-save-product"
+            disabled={submitting}
+          >
+            {submitting
+              ? "Đang lưu..."
+              : isEdit
+                ? "Lưu thay đổi"
+                : "Thêm sản phẩm"}
           </button>
         </div>
       </form>

@@ -2,6 +2,7 @@ import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 
 const API = `${API_BASE}/api/admin/products`;
 
@@ -75,11 +76,7 @@ const AdminProducts = () => {
     }
   };
 
-  const imgSrc = (p) => {
-    const src = p.hinh_anh || "";
-    if (src.startsWith("/uploads/")) return `${API_BASE}${src}`;
-    return src || "";
-  };
+  const imgSrc = (p) => resolveMediaUrl(p.hinh_anh || "");
 
   return (
     <div className="admin-products">

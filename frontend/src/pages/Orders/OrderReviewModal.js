@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import "./OrderReviewModal.css";
 
 const STAR_LABELS = {
@@ -68,7 +69,7 @@ export default function OrderReviewModal({
 
         <div className="orm-product">
           {line.hinh_anh ? (
-            <img src={line.hinh_anh} alt="" className="orm-thumb" />
+            <img src={resolveMediaUrl(line.hinh_anh)} alt="" className="orm-thumb" />
           ) : (
             <div className="orm-thumb orm-thumb-ph">
               <i className="fas fa-image" />

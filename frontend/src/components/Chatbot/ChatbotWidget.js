@@ -2,6 +2,7 @@ import axios from "axios";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import API_BASE from "../../config";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import "./ChatbotWidget.css";
 
 const API = `${API_BASE}/api/chat`;
@@ -335,7 +336,10 @@ export default function ChatbotWidget() {
                               to={p.detailPath || `/product/${p._id}`}
                               className="cb-product-card"
                             >
-                              <img src={p.hinh_anh || "https://via.placeholder.com/52"} alt="" />
+                              <img
+                                src={resolveMediaUrl(p.hinh_anh) || "https://via.placeholder.com/52"}
+                                alt=""
+                              />
                               <div className="cb-product-meta">
                                 <strong>{p.ten_san_pham}</strong>
                                 <span>

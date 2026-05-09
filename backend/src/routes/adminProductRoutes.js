@@ -3,7 +3,7 @@ const router = express.Router();
 const ctrl = require("../controllers/adminProductController");
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
-const upload = require("../middleware/uploadMiddleware");
+const { upload } = require("../middleware/uploadMiddleware");
 
 const auth = [authMiddleware, roleMiddleware("admin", "nhan_vien")];
 

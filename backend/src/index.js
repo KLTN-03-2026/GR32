@@ -1,4 +1,5 @@
 const express = require("express");
+const multer = require("multer");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
@@ -39,8 +40,8 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true });
 });
 
-// Phục vụ file ảnh upload
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+// Không cần phục vụ file ảnh upload nữa vì dùng Cloudinary
+// app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // --- 3. KẾT NỐI DATABASE ---
 mongoose
@@ -66,6 +67,30 @@ app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/admin/coupons", adminCouponRoutes);
 app.use("/api/admin/reports", adminReportRoutes);
 app.use("/api/chat", chatbotRoutes);
+
+/** Multer/file upload — báo JSON rõ ràng thay vì 500 chung */
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res
+        .status(400)
+        .json({
+          message:
+            "Ảnh vượt quá 15MB. Vui lòng chọn file nhỏ hơn hoặc nén JPG/WEBP.",
+        });
+    }
+    return res.status(400).json({ message: err.message || "Lỗi upload file." });
+  }
+  if (/Chỉ chấp nhận file ảnh/i.test(err?.message || "")) {
+    return res.status(400).json({ message: err.message });
+  }
+  return next(err);
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || 500).json({ message: err.message || "Lỗi server!" });
+});
 
 // --- 5. KHỞI CHẠY SERVER ---
 const PORT = process.env.PORT || 5000;

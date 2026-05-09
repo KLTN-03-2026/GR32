@@ -2,6 +2,7 @@ import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import API_BASE from "../../config";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import { getOrderFlowPath } from "../../checkoutPath";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
@@ -169,7 +170,7 @@ const CartPage = () => {
                   <div className="col-product">
                     <Link className="cart-item-img" to={`/product/${item.san_pham_id}`} onClick={(e) => e.stopPropagation()}>
                       {item.hinh_anh ? (
-                        <img src={item.hinh_anh} alt={item.ten_san_pham} />
+                        <img src={resolveMediaUrl(item.hinh_anh)} alt={item.ten_san_pham} />
                       ) : (
                         <div className="cart-no-img"><i className="fas fa-image"></i></div>
                       )}

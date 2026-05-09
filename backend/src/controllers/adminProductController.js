@@ -1,8 +1,9 @@
 const Product = require("../models/Product");
 const Cart = require("../models/Cart");
 const Review = require("../models/Review");
-const fs = require("fs");
+const { cloudinary } = require("../middleware/uploadMiddleware");
 const path = require("path");
+const fs = require("fs");
 
 exports.getAll = async (req, res) => {
   try {
@@ -20,7 +21,10 @@ exports.getAll = async (req, res) => {
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [products, total] = await Promise.all([
-      Product.find(filter).sort({ ngay_tao: -1 }).skip(skip).limit(parseInt(limit)),
+      Product.find(filter)
+        .sort({ ngay_tao: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
       Product.countDocuments(filter),
     ]);
 
@@ -39,7 +43,8 @@ exports.getAll = async (req, res) => {
 exports.getById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
+    if (!product)
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
     res.status(200).json(product);
   } catch (err) {
     res.status(500).json({ message: "Lỗi server!" });
@@ -51,16 +56,22 @@ exports.setTrangThai = async (req, res) => {
   try {
     const st = String(req.body.trang_thai || "").trim();
     if (!["dang_ban", "ngung_ban"].includes(st)) {
-      return res.status(400).json({ message: "Trạng thái không hợp lệ (chỉ dang_ban hoặc ngung_ban)." });
+      return res.status(400).json({
+        message: "Trạng thái không hợp lệ (chỉ dang_ban hoặc ngung_ban).",
+      });
     }
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       { $set: { trang_thai: st } },
       { new: true },
     ).select("ten_san_pham trang_thai");
-    if (!product) return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
+    if (!product)
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
     res.json({
-      message: st === "dang_ban" ? "Đã mở bán lại." : "Đã chuyển sang ngừng bán (vẫn lưu trong CSDL).",
+      message:
+        st === "dang_ban"
+          ? "Đã mở bán lại."
+          : "Đã chuyển sang ngừng bán (vẫn lưu trong CSDL).",
       product,
     });
   } catch (err) {
@@ -78,16 +89,30 @@ exports.create = async (req, res) => {
     const data = JSON.parse(req.body.data);
 
     const {
-      ten_san_pham, mo_ta, thuong_hieu, danh_muc, gioi_tinh,
-      chat_lieu, kieu_dang, huong_dan_bao_quan,
-      gia_goc, phan_tram_giam_gia, bien_the,
+      ten_san_pham,
+      mo_ta,
+      thuong_hieu,
+      danh_muc,
+      gioi_tinh,
+      chat_lieu,
+      kieu_dang,
+      huong_dan_bao_quan,
+      gia_goc,
+      phan_tram_giam_gia,
+      bien_the,
     } = data;
 
     if (!ten_san_pham || !mo_ta || !thuong_hieu || !danh_muc) {
-      return res.status(400).json({ message: "Vui lòng nhập đủ thông tin bắt buộc (Tên, Mô tả, Thương hiệu, Danh mục)!" });
+      return res.status(400).json({
+        message:
+          "Vui lòng nhập đủ thông tin bắt buộc (Tên, Mô tả, Thương hiệu, Danh mục)!",
+      });
     }
     if (!chat_lieu || !kieu_dang || !huong_dan_bao_quan) {
-      return res.status(400).json({ message: "Vui lòng nhập đủ thuộc tính thời trang (Chất liệu, Kiểu dáng, Hướng dẫn bảo quản)!" });
+      return res.status(400).json({
+        message:
+          "Vui lòng nhập đủ thuộc tính thời trang (Chất liệu, Kiểu dáng, Hướng dẫn bảo quản)!",
+      });
     }
 
     let hinh_anh = "";
@@ -95,11 +120,11 @@ exports.create = async (req, res) => {
 
     if (req.files) {
       if (req.files.hinh_anh && req.files.hinh_anh[0]) {
-        hinh_anh = `/uploads/${req.files.hinh_anh[0].filename}`;
+        hinh_anh = req.files.hinh_anh[0].path; // Cloudinary URL
       }
       if (req.files.danh_sach_anh) {
         req.files.danh_sach_anh.forEach((f) => {
-          danh_sach_anh.push(`/uploads/${f.filename}`);
+          danh_sach_anh.push(f.path); // Cloudinary URLs
         });
       }
     }
@@ -121,17 +146,23 @@ exports.create = async (req, res) => {
       const skuSet = new Set();
       for (const bt of bien_the) {
         if (!bt.ma_sku) {
-          return res.status(400).json({ message: `Mã SKU là bắt buộc cho mỗi biến thể!` });
+          return res
+            .status(400)
+            .json({ message: `Mã SKU là bắt buộc cho mỗi biến thể!` });
         }
         if (skuSet.has(bt.ma_sku)) {
-          return res.status(400).json({ message: `Mã SKU "${bt.ma_sku}" bị trùng lặp!` });
+          return res
+            .status(400)
+            .json({ message: `Mã SKU "${bt.ma_sku}" bị trùng lặp!` });
         }
         skuSet.add(bt.ma_sku);
 
         const btGiaGoc = Number(bt.gia_goc) || giaGoc;
         const btGiaBan = Number(bt.gia_ban) || giaHienTai;
         if (btGiaBan > btGiaGoc) {
-          return res.status(400).json({ message: `Giá bán không được lớn hơn giá gốc (SKU: ${bt.ma_sku})!` });
+          return res.status(400).json({
+            message: `Giá bán không được lớn hơn giá gốc (SKU: ${bt.ma_sku})!`,
+          });
         }
 
         parsedBienThe.push({
@@ -145,15 +176,22 @@ exports.create = async (req, res) => {
       }
     }
 
-    const tongTon = parsedBienThe.length > 0
-      ? parsedBienThe.reduce((s, v) => s + v.so_luong, 0)
-      : 0;
+    const tongTon =
+      parsedBienThe.length > 0
+        ? parsedBienThe.reduce((s, v) => s + v.so_luong, 0)
+        : 0;
 
     const product = await Product.create({
-      ten_san_pham, mo_ta, thuong_hieu, danh_muc,
+      ten_san_pham,
+      mo_ta,
+      thuong_hieu,
+      danh_muc,
       gioi_tinh: gioi_tinh || "Unisex",
-      chat_lieu, kieu_dang, huong_dan_bao_quan,
-      hinh_anh, danh_sach_anh,
+      chat_lieu,
+      kieu_dang,
+      huong_dan_bao_quan,
+      hinh_anh,
+      danh_sach_anh,
       gia_goc: giaGoc,
       phan_tram_giam_gia: giamGia,
       gia_hien_tai: giaHienTai,
@@ -172,7 +210,8 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
+    if (!product)
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
 
     if (!req.body.data) {
       return res.status(400).json({ message: "Dữ liệu không hợp lệ!" });
@@ -181,30 +220,85 @@ exports.update = async (req, res) => {
     const data = JSON.parse(req.body.data);
 
     const {
-      ten_san_pham, mo_ta, thuong_hieu, danh_muc, gioi_tinh,
-      chat_lieu, kieu_dang, huong_dan_bao_quan,
-      gia_goc, phan_tram_giam_gia, bien_the, giu_anh_cu, trang_thai: trangThaiBody,
+      ten_san_pham,
+      mo_ta,
+      thuong_hieu,
+      danh_muc,
+      gioi_tinh,
+      chat_lieu,
+      kieu_dang,
+      huong_dan_bao_quan,
+      gia_goc,
+      phan_tram_giam_gia,
+      bien_the,
+      giu_anh_cu,
+      trang_thai: trangThaiBody,
+      anh_chi_tiet_giu_lai,
     } = data;
 
     if (!ten_san_pham || !mo_ta || !thuong_hieu || !danh_muc) {
-      return res.status(400).json({ message: "Vui lòng nhập đủ thông tin bắt buộc!" });
+      return res
+        .status(400)
+        .json({ message: "Vui lòng nhập đủ thông tin bắt buộc!" });
     }
     if (!chat_lieu || !kieu_dang || !huong_dan_bao_quan) {
-      return res.status(400).json({ message: "Vui lòng nhập đủ thuộc tính thời trang!" });
+      return res
+        .status(400)
+        .json({ message: "Vui lòng nhập đủ thuộc tính thời trang!" });
     }
 
     if (req.files && req.files.hinh_anh && req.files.hinh_anh[0]) {
-      deleteFile(product.hinh_anh);
-      product.hinh_anh = `/uploads/${req.files.hinh_anh[0].filename}`;
+      // Delete old image from Cloudinary if it's a Cloudinary URL
+      if (product.hinh_anh && product.hinh_anh.includes("cloudinary")) {
+        try {
+          const publicId = product.hinh_anh.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(`products/${publicId}`);
+        } catch (error) {
+          console.log(
+            "Failed to delete old image from Cloudinary:",
+            error.message,
+          );
+        }
+      }
+      product.hinh_anh = req.files.hinh_anh[0].path; // Cloudinary URL
     }
 
-    if (req.files && req.files.danh_sach_anh && req.files.danh_sach_anh.length > 0) {
-      if (!giu_anh_cu) {
-        (product.danh_sach_anh || []).forEach(deleteFile);
+    const hasExplicitRetain = Array.isArray(anh_chi_tiet_giu_lai);
+    if (hasExplicitRetain) {
+      const desired = [
+        ...new Set(
+          anh_chi_tiet_giu_lai.map(normalizeUploadRef).filter(Boolean),
+        ),
+      ];
+      const prev = [...(product.danh_sach_anh || [])];
+      for (const pth of prev) {
+        if (!desired.includes(pth)) deleteFile(pth);
+      }
+      product.danh_sach_anh = desired;
+    }
+
+    if (req.files?.danh_sach_anh?.length) {
+      if (!hasExplicitRetain && giu_anh_cu === false) {
+        // Delete old images from Cloudinary
+        if (product.danh_sach_anh && product.danh_sach_anh.length > 0) {
+          for (const imageUrl of product.danh_sach_anh) {
+            if (imageUrl && imageUrl.includes("cloudinary")) {
+              try {
+                const publicId = imageUrl.split("/").pop().split(".")[0];
+                await cloudinary.uploader.destroy(`products/${publicId}`);
+              } catch (error) {
+                console.log(
+                  "Failed to delete old image from Cloudinary:",
+                  error.message,
+                );
+              }
+            }
+          }
+        }
         product.danh_sach_anh = [];
       }
       req.files.danh_sach_anh.forEach((f) => {
-        product.danh_sach_anh.push(`/uploads/${f.filename}`);
+        product.danh_sach_anh.push(f.path); // Cloudinary URLs
       });
     }
 
@@ -236,7 +330,9 @@ exports.update = async (req, res) => {
       for (const bt of bien_the) {
         let sku = bt.ma_sku;
         if (!sku) {
-          const prefix = (bt.mau_sac || "X").substring(0, 2).toUpperCase() + (bt.kich_co || "0");
+          const prefix =
+            (bt.mau_sac || "X").substring(0, 2).toUpperCase() +
+            (bt.kich_co || "0");
           sku = `${prefix}-${Date.now().toString().slice(-4)}${autoIdx++}`;
         }
         if (skuSet.has(sku)) {
@@ -248,9 +344,12 @@ exports.update = async (req, res) => {
         const btGiaBan = Number(bt.gia_ban) || product.gia_hien_tai || btGiaGoc;
 
         parsed.push({
-          mau_sac: bt.mau_sac || "", kich_co: bt.kich_co || "",
-          so_luong: Number(bt.so_luong) || 0, ma_sku: sku,
-          gia_goc: btGiaGoc, gia_ban: btGiaBan,
+          mau_sac: bt.mau_sac || "",
+          kich_co: bt.kich_co || "",
+          so_luong: Number(bt.so_luong) || 0,
+          ma_sku: sku,
+          gia_goc: btGiaGoc,
+          gia_ban: btGiaBan,
         });
       }
       product.bien_the = parsed;
@@ -269,14 +368,18 @@ exports.update = async (req, res) => {
 exports.remove = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
+    if (!product)
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
 
     deleteFile(product.hinh_anh);
     (product.danh_sach_anh || []).forEach(deleteFile);
 
     await Review.deleteMany({ san_pham_id: req.params.id });
     await Product.findByIdAndDelete(req.params.id);
-    await Cart.updateMany({}, { $pull: { san_pham: { san_pham_id: req.params.id } } });
+    await Cart.updateMany(
+      {},
+      { $pull: { san_pham: { san_pham_id: req.params.id } } },
+    );
 
     res.status(200).json({
       message:
@@ -288,10 +391,43 @@ exports.remove = async (req, res) => {
   }
 };
 
-function deleteFile(filePath) {
-  if (!filePath || !filePath.startsWith("/uploads/")) return;
-  const fullPath = path.join(__dirname, "../../", filePath);
-  if (fs.existsSync(fullPath)) {
-    try { fs.unlinkSync(fullPath); } catch {}
+async function deleteFile(filePath) {
+  if (!filePath) return;
+
+  // Handle Cloudinary URLs
+  if (filePath.includes("cloudinary")) {
+    try {
+      const publicId = filePath.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(`products/${publicId}`);
+    } catch (error) {
+      console.log("Failed to delete image from Cloudinary:", error.message);
+    }
+    return;
   }
+
+  // Handle local files (backward compatibility)
+  if (filePath.startsWith("/uploads/")) {
+    const fullPath = path.join(__dirname, "../../", filePath);
+    if (fs.existsSync(fullPath)) {
+      try {
+        fs.unlinkSync(fullPath);
+      } catch {}
+    }
+  }
+}
+
+/** Chuẩn hoá giá trị từ client (Mongo có thể lưu full URL từ máy khác) → chỉ nhận /uploads/... */
+function normalizeUploadRef(stored) {
+  if (!stored || typeof stored !== "string") return null;
+  const s = stored.trim().replace(/\\/g, "/");
+  if (!s || s.includes("..")) return null;
+  if (s.startsWith("/uploads/")) return s;
+  try {
+    if (/^https?:\/\//i.test(s)) {
+      const pathname = new URL(s).pathname;
+      if (pathname.startsWith("/uploads/") && !pathname.includes(".."))
+        return pathname;
+    }
+  } catch {}
+  return null;
 }

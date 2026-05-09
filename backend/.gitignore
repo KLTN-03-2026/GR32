@@ -1,0 +1,6 @@
+node_modules/
+.env
+
+# Ảnh upload (git chỉ giữ thư mục trống nhờ .gitkeep — file thật ở local / volume Docker).
+uploads/*
+!uploads/.gitkeep

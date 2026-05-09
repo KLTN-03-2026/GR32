@@ -1,20 +1,36 @@
 const multer = require("multer");
-const path = require("path");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../../uploads"));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Configure Cloudinary storage for multer
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "products", // Folder name in Cloudinary
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    public_id: (req, file) => {
+      const timestamp = Date.now();
+      const random = Math.round(Math.random() * 1e9);
+      const ext = file.originalname.split(".").pop();
+      return `${file.fieldname}-${timestamp}-${random}.${ext}`;
+    },
+    transformation: [
+      { quality: "auto:good" }, // Auto optimize quality
+      { fetch_format: "auto" }, // Auto choose best format
+    ],
   },
 });
 
 const fileFilter = (req, file, cb) => {
   const allowed = [".jpg", ".jpeg", ".png", ".webp"];
-  const ext = path.extname(file.originalname).toLowerCase();
+  const ext = "." + file.originalname.split(".").pop().toLowerCase();
   if (allowed.includes(ext)) {
     cb(null, true);
   } else {
@@ -25,7 +41,8 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit
 });
 
-module.exports = upload;
+// Export cloudinary instance for use in other files
+module.exports = { upload, cloudinary };

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 import API_BASE from "../../config";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import "./AdminCategoriesPage.css";
 import "./AdminBrandsPage.css";
 
@@ -20,10 +21,7 @@ function formatDate(iso) {
 }
 
 function imgSrc(path) {
-  if (!path) return "";
-  if (path.startsWith("http")) return path;
-  if (path.startsWith("/")) return `${API_BASE}${path}`;
-  return path;
+  return resolveMediaUrl(path);
 }
 
 const emptyForm = {

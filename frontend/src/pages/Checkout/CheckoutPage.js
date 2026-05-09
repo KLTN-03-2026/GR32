@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
 import API_BASE from "../../config";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import { normalizeVnPhone10, MSG_INVALID_VN_PHONE } from "../../utils/vnPhone";
 import "./CheckoutPage.css";
 
@@ -503,7 +504,7 @@ const CheckoutPage = () => {
                       role="presentation"
                     >
                       {item.hinh_anh ? (
-                        <img src={item.hinh_anh} alt="" />
+                        <img src={resolveMediaUrl(item.hinh_anh)} alt="" />
                       ) : (
                         <div className="checkout-line-noimg">
                           <i className="fas fa-image" />

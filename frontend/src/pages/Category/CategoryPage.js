@@ -2,6 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import API_BASE from "../../config";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
 import "./CategoryPage.css";
@@ -188,7 +189,10 @@ const CategoryPage = () => {
                   onClick={() => navigate(`/product/${item._id}`)}
                 >
                   <div className="cat-card-img">
-                    <img src={item.hinh_anh || "https://via.placeholder.com/300x400"} alt={item.ten_san_pham} />
+                    <img
+                      src={resolveMediaUrl(item.hinh_anh) || "https://via.placeholder.com/300x400"}
+                      alt={item.ten_san_pham}
+                    />
                     {item.phan_tram_giam_gia > 0 && (
                       <span className="cat-sale-tag">-{item.phan_tram_giam_gia}%</span>
                     )}

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import API_BASE from "../../config";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import { getOrderFlowPath } from "../../checkoutPath";
 import Header from "../../components/Layout/Header";
 import Footer from "../../components/Layout/Footer";
@@ -56,7 +57,9 @@ export default function ProductDetail() {
       setProduct(res.data.product);
       setReviews(res.data.reviews || []);
       const p = res.data.product;
-      setMainImg((p.danh_sach_anh?.length ? p.danh_sach_anh : [p.hinh_anh])[0] || "");
+      const rawFirst =
+        (p.danh_sach_anh?.length ? p.danh_sach_anh : p.hinh_anh ? [p.hinh_anh] : []).find(Boolean);
+      setMainImg(rawFirst ? resolveMediaUrl(rawFirst) : "");
     } catch { setProduct(null); }
     finally { setLoading(false); }
   }, [id]);
@@ -66,7 +69,9 @@ export default function ProductDetail() {
   if (loading) return <><Header /><div className="pd-loading">Đang tải...</div><Footer /></>;
   if (!product) return <><Header /><div className="pd-loading">Sản phẩm không tồn tại!</div><Footer /></>;
 
-  const images = product.danh_sach_anh?.length > 0 ? product.danh_sach_anh : product.hinh_anh ? [product.hinh_anh] : [];
+  const images = (product.danh_sach_anh?.length ? product.danh_sach_anh : product.hinh_anh ? [product.hinh_anh] : [])
+    .map((u) => resolveMediaUrl(u))
+    .filter(Boolean);
   const THUMB_VISIBLE = 6;
   const thumbEnd = Math.min(thumbStart + THUMB_VISIBLE, images.length);
 

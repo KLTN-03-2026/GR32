@@ -2,6 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API_BASE from "../../config";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
 import ChatbotWidget from "../../components/Chatbot/ChatbotWidget";
@@ -87,7 +88,10 @@ const Home = () => {
   const ProductCard = ({ product }) => (
     <div className="product-card" onClick={() => navigate(`/product/${product._id}`)}>
       <div className="product-img">
-        <img src={product.hinh_anh || "https://via.placeholder.com/300x400"} alt={product.ten_san_pham} />
+        <img
+          src={resolveMediaUrl(product.hinh_anh) || "https://via.placeholder.com/300x400"}
+          alt={product.ten_san_pham}
+        />
         {product.phan_tram_giam_gia > 0 && (
           <span className="discount-tag">-{product.phan_tram_giam_gia}%</span>
         )}

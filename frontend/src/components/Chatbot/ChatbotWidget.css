@@ -24,6 +24,7 @@
   bottom: 28px;
   right: 24px;
   min-width: 52px;
+  width: auto;
   height: 52px;
   padding: 0 16px 0 14px;
   border-radius: 999px;
@@ -38,7 +39,7 @@
   gap: 10px;
   box-shadow: var(--cb-shadow-fab);
   z-index: 10050;
-  transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, color 0.22s ease, border-color 0.22s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   animation: cb-fab-breathe 10s ease-in-out infinite alternate, cb-pulse-scale 2.2s ease-in-out infinite;
   font-family: var(--cb-font);
   font-size: 12px;
@@ -46,23 +47,53 @@
   letter-spacing: 0.02em;
 }
 
+.cb-widget-fab.collapsed {
+  min-width: 52px;
+  width: 52px;
+  padding: 0;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+}
+
 .cb-widget-fab i {
   font-size: 17px;
   opacity: 0.95;
+  transition: all 0.3s ease;
+}
+
+.cb-widget-fab.collapsed i {
+  font-size: 18px;
+  opacity: 1;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .cb-widget-fab-label {
   white-space: nowrap;
   line-height: 1;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.cb-widget-fab.collapsed .cb-widget-fab-label {
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
 }
 
 .cb-widget-fab:hover {
-  transform: translateY(-2px) scale(1.08);
+  transform: translateY(-4px) scale(1.12);
   background: #111827;
   color: #fff;
   border-color: #111827;
-  box-shadow: var(--cb-shadow-fab-hover);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
   animation-play-state: paused;
+}
+
+.cb-widget-fab.collapsed:hover {
+  transform: translateY(-4px) scale(1.15);
 }
 
 .cb-widget-fab:active {

@@ -52,7 +52,7 @@ const team = [
     desc: "Xây dựng nội dung mô tả sản phẩm, phối hợp chuẩn hóa thông tin hiển thị và kịch bản hỗ trợ khách.",
   },
   {
-    name: "Quỳnh",
+    name: "Quynh",
     role: "Thành viên vận hành",
     desc: "Theo dõi phản hồi khách hàng, hỗ trợ quy trình chăm sóc khách và cập nhật chính sách dịch vụ.",
   },

@@ -24,6 +24,7 @@ function formatPrice(n) {
 export default function ChatbotWidget() {
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [sessionId, setSessionId] = useState(() => localStorage.getItem(STORAGE_KEY) || "");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -147,17 +148,23 @@ export default function ChatbotWidget() {
   }, [open, minimized, updateScrollAnchoring]);
 
   const handleTogglePanel = () => {
-    if (!open) {
+    if (!open) {//Mở panel
       bootedRef.current = false;
       setMinimized(false);
       stickToBottomRef.current = true;
+      setCollapsed(true); // Mở panel với collapsed luôn
+      setOpen(true);
+    } else {
+      // Nếu panel đang mở, đóng panel
+      setOpen(false);
+      setCollapsed(false); // Reset state cho lần sau
     }
-    setOpen(!open);
   };
 
   const handleClose = () => {
     setOpen(false);
     setMinimized(false);
+    setCollapsed(false); // Đảm bảo nút mở rộng khi đóng panel
   };
 
   const startNewChat = async () => {
@@ -261,7 +268,7 @@ export default function ChatbotWidget() {
     <>
       <button
         type="button"
-        className="cb-widget-fab"
+        className={`cb-widget-fab ${collapsed ? 'collapsed' : ''}`}
         onClick={handleTogglePanel}
         aria-label="Mở trợ lý AI"
       >

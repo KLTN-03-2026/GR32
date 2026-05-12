@@ -25,8 +25,7 @@ const OrderStatusChart = ({ data }) => {
   }
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-      
+    <div className="chart-container">     
       <ResponsiveContainer width="100%" height={320}>
         <PieChart>
           <Pie
@@ -36,7 +35,7 @@ const OrderStatusChart = ({ data }) => {
             innerRadius={70} // Biến thành biểu đồ Donut
             outerRadius={100}
             paddingAngle={5} // Khoảng cách giữa các miếng
-            cornerRadius={6} // Bo góc các miếng bánh
+            cornerRadius={3} // Bo góc các miếng bánh
             dataKey="count"
             nameKey="label"
             animationBegin={0}
@@ -45,7 +44,7 @@ const OrderStatusChart = ({ data }) => {
             {data.map((entry, index) => (
               <Cell 
                 key={`cell-${index}`} 
-                fill={COLORS[entry.key] || "#999"} 
+                fill={COLORS[entry.key] || "#999"} // Màu sắc cho từng phần
                 className="hover:opacity-80 transition-opacity cursor-pointer outline-none"
               />
             ))}
@@ -65,8 +64,14 @@ const OrderStatusChart = ({ data }) => {
           
           <Legend 
             verticalAlign="bottom" 
-            height={36}
+            height={50}
             iconType="circle"
+            wrapperStyle={{
+              paddingTop: "20px",
+              paddingLeft: "20px",
+              paddingRight: "20px"
+            }}
+            itemGap={60}
             formatter={(value) => <span className="text-gray-600 font-medium text-sm">{value}</span>}
           />
         </PieChart>

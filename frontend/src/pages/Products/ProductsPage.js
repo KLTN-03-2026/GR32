@@ -1,10 +1,10 @@
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import API_BASE from "../../config";
-import { resolveMediaUrl } from "../../utils/mediaUrl";
 import Footer from "../../components/Layout/Footer";
 import Header from "../../components/Layout/Header";
+import API_BASE from "../../config";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import "./ProductsPage.css";
 
 const API_PRODUCTS = `${API_BASE}/api/products`;
@@ -38,11 +38,20 @@ function useCategoryTree(categories) {
   }, [categories]);
 }
 
-function CategoryFilterBranch({ node, byParent, selectedSlug, onSelect, depth }) {
+function CategoryFilterBranch({
+  node,
+  byParent,
+  selectedSlug,
+  onSelect,
+  depth,
+}) {
   const kids = byParent.get(String(node._id)) || [];
   if (!kids.length) {
     return (
-      <label key={node._id} className={`filter-cat-leaf filter-cat-depth-${Math.min(depth, 3)}`}>
+      <label
+        key={node._id}
+        className={`filter-cat-leaf filter-cat-depth-${Math.min(depth, 3)}`}
+      >
         <input
           type="radio"
           name="product-cat-slug"
@@ -54,7 +63,10 @@ function CategoryFilterBranch({ node, byParent, selectedSlug, onSelect, depth })
     );
   }
   return (
-    <div key={node._id} className={`filter-cat-block filter-cat-depth-${Math.min(depth, 3)}`}>
+    <div
+      key={node._id}
+      className={`filter-cat-block filter-cat-depth-${Math.min(depth, 3)}`}
+    >
       <div className="filter-cat-block-title">{node.ten_danh_muc}</div>
       <div className="filter-cat-block-children">
         {kids.map((ch) => (
@@ -81,12 +93,20 @@ const ProductsPage = () => {
   const [sortBy, setSortBy] = useState("moi_nhat");
 
   const [categories, setCategories] = useState([]);
-  const [facets, setFacets] = useState({ kich_co: [], mau_sac: [] });
+  const [facets, setFacets] = useState({
+    kich_co: [],
+    mau_sac: [],
+    thuong_hieu: [],
+    gia_min: 0,
+    gia_max: 0,
+  });
   const [metaErr, setMetaErr] = useState("");
 
   const [selectedSlug, setSelectedSlug] = useState("");
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
+  const [selectedBrands, setSelectedBrands] = useState([]);
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 0 });
   const [showMoreColors, setShowMoreColors] = useState(false);
 
   const [qInput, setQInput] = useState("");
@@ -113,12 +133,25 @@ const ProductsPage = () => {
         setFacets({
           kich_co: fRes.data?.kich_co || [],
           mau_sac: fRes.data?.mau_sac || [],
+          thuong_hieu: fRes.data?.thuong_hieu || [],
+          gia_min: fRes.data?.gia_min || 0,
+          gia_max: fRes.data?.gia_max || 0,
+        });
+        setPriceRange({
+          min: fRes.data?.gia_min || 0,
+          max: fRes.data?.gia_max || 0,
         });
       } catch {
         if (!cancelled) {
           setMetaErr("Không tải được danh mục / bộ lọc từ máy chủ.");
           setCategories([]);
-          setFacets({ kich_co: [], mau_sac: [] });
+          setFacets({
+            kich_co: [],
+            mau_sac: [],
+            thuong_hieu: [],
+            gia_min: 0,
+            gia_max: 0,
+          });
         }
       }
     })();
@@ -134,7 +167,12 @@ const ProductsPage = () => {
       params.set("sap_xep", sortBy);
       if (selectedSlug) params.set("danh_muc_slug", selectedSlug);
       if (selectedSizes.length) params.set("kich_co", selectedSizes.join(","));
-      if (selectedColors.length) params.set("mau_sac", selectedColors.join(","));
+      if (selectedColors.length)
+        params.set("mau_sac", selectedColors.join(","));
+      if (selectedBrands.length)
+        params.set("thuong_hieu", selectedBrands.join(","));
+      if (priceRange.min > 0) params.set("gia_min", priceRange.min);
+      if (priceRange.max > 0) params.set("gia_max", priceRange.max);
       if (q) params.set("q", q);
 
       const res = await axios.get(`${API_PRODUCTS}?${params.toString()}`);
@@ -147,7 +185,16 @@ const ProductsPage = () => {
       setTotalPages(1);
       setTotalProducts(0);
     }
-  }, [page, sortBy, selectedSlug, selectedSizes, selectedColors, q]);
+  }, [
+    page,
+    sortBy,
+    selectedSlug,
+    selectedSizes,
+    selectedColors,
+    selectedBrands,
+    priceRange,
+    q,
+  ]);
 
   useEffect(() => {
     fetchProducts();
@@ -155,7 +202,15 @@ const ProductsPage = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [sortBy, selectedSlug, selectedSizes, selectedColors, q]);
+  }, [
+    sortBy,
+    selectedSlug,
+    selectedSizes,
+    selectedColors,
+    selectedBrands,
+    priceRange,
+    q,
+  ]);
 
   const toggleFilter = (value, selected, setSelected) => {
     setSelected((prev) =>
@@ -202,7 +257,9 @@ const ProductsPage = () => {
 
           <div className="filter-group">
             <p className="filter-title">Danh mục</p>
-            <p className="filter-hint">Theo cấu trúc cửa hàng (slug → tên trên sản phẩm).</p>
+            <p className="filter-hint">
+              Theo cấu trúc cửa hàng (slug → tên trên sản phẩm).
+            </p>
             <label className="filter-cat-leaf filter-cat-all">
               <input
                 type="radio"
@@ -238,7 +295,9 @@ const ProductsPage = () => {
                   <input
                     type="checkbox"
                     checked={selectedSizes.includes(size)}
-                    onChange={() => toggleFilter(size, selectedSizes, setSelectedSizes)}
+                    onChange={() =>
+                      toggleFilter(size, selectedSizes, setSelectedSizes)
+                    }
                   />
                   <span>Size {size}</span>
                 </label>
@@ -256,17 +315,81 @@ const ProductsPage = () => {
                   <input
                     type="checkbox"
                     checked={selectedColors.includes(color)}
-                    onChange={() => toggleFilter(color, selectedColors, setSelectedColors)}
+                    onChange={() =>
+                      toggleFilter(color, selectedColors, setSelectedColors)
+                    }
                   />
                   <span>{color}</span>
                 </label>
               ))
             )}
             {hasMoreColors && (
-              <button type="button" className="show-more-btn" onClick={() => setShowMoreColors(!showMoreColors)}>
+              <button
+                type="button"
+                className="show-more-btn"
+                onClick={() => setShowMoreColors(!showMoreColors)}
+              >
                 {showMoreColors ? "Thu gọn ▲" : "Thêm màu ▼"}
               </button>
             )}
+          </div>
+
+          <div className="filter-group filter-group--scroll">
+            <p className="filter-title">Thương hiệu</p>
+            {(facets.thuong_hieu || []).length === 0 ? (
+              <p className="filter-empty">Chưa có dữ liệu thương hiệu.</p>
+            ) : (
+              facets.thuong_hieu.map((brand) => (
+                <label key={brand} className="filter-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={selectedBrands.includes(brand)}
+                    onChange={() =>
+                      toggleFilter(brand, selectedBrands, setSelectedBrands)
+                    }
+                  />
+                  <span>{brand}</span>
+                </label>
+              ))
+            )}
+          </div>
+
+          <div className="filter-group">
+            <p className="filter-title">Khoảng giá</p>
+            <div className="price-range-inputs">
+              <input
+                type="number"
+                placeholder="Từ"
+                value={priceRange.min || ""}
+                onChange={(e) =>
+                  setPriceRange({
+                    ...priceRange,
+                    min: Number(e.target.value) || 0,
+                  })
+                }
+                className="price-input"
+              />
+              <span>-</span>
+              <input
+                type="number"
+                placeholder="Đến"
+                value={priceRange.max || ""}
+                onChange={(e) =>
+                  setPriceRange({
+                    ...priceRange,
+                    max: Number(e.target.value) || 0,
+                  })
+                }
+                className="price-input"
+              />
+              <button
+                type="button"
+                className="price-apply-btn"
+                onClick={() => fetchProducts()}
+              >
+                Áp dụng
+              </button>
+            </div>
           </div>
         </aside>
 
@@ -294,7 +417,9 @@ const ProductsPage = () => {
                 </button>
               ))}
               <select
-                value={sortBy === "gia_tang" || sortBy === "gia_giam" ? sortBy : ""}
+                value={
+                  sortBy === "gia_tang" || sortBy === "gia_giam" ? sortBy : ""
+                }
                 onChange={(e) => e.target.value && setSortBy(e.target.value)}
               >
                 <option value="">Giá</option>
@@ -307,10 +432,18 @@ const ProductsPage = () => {
               <span>
                 {page}/{totalPages}
               </span>
-              <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
                 &lt;
               </button>
-              <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
                 &gt;
               </button>
             </div>
@@ -326,27 +459,39 @@ const ProductsPage = () => {
                   tabIndex={0}
                   onClick={() => navigate(`/product/${item._id}`)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") navigate(`/product/${item._id}`);
+                    if (e.key === "Enter" || e.key === " ")
+                      navigate(`/product/${item._id}`);
                   }}
                 >
                   <div className="p-card-img">
                     <img
-                      src={resolveMediaUrl(item.hinh_anh) || "https://via.placeholder.com/300x400"}
+                      src={
+                        resolveMediaUrl(item.hinh_anh) ||
+                        "https://via.placeholder.com/300x400"
+                      }
                       alt={item.ten_san_pham}
                     />
                     {item.phan_tram_giam_gia > 0 && (
-                      <span className="p-sale-tag">-{item.phan_tram_giam_gia}%</span>
+                      <span className="p-sale-tag">
+                        -{item.phan_tram_giam_gia}%
+                      </span>
                     )}
                   </div>
                   <div className="p-card-info">
                     <h4 className="p-card-name">{item.ten_san_pham}</h4>
                     <div className="p-card-price">
-                      <span className="p-current">{formatPrice(item.gia_hien_tai)}</span>
+                      <span className="p-current">
+                        {formatPrice(item.gia_hien_tai)}
+                      </span>
                       {item.gia_goc > item.gia_hien_tai && (
-                        <del className="p-original">{formatPrice(item.gia_goc)}</del>
+                        <del className="p-original">
+                          {formatPrice(item.gia_goc)}
+                        </del>
                       )}
                       {item.phan_tram_giam_gia > 0 && (
-                        <span className="p-discount">{item.phan_tram_giam_gia}% off</span>
+                        <span className="p-discount">
+                          {item.phan_tram_giam_gia}% off
+                        </span>
                       )}
                     </div>
                     <div className="p-card-meta">

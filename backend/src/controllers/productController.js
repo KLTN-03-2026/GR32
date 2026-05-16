@@ -39,7 +39,9 @@ async function productDanhMucNamesFromCategorySlug(slug) {
     for (const ch of byParent.get(String(n._id)) || []) stack.push(ch);
   }
 
-  const parentIds = new Set(all.filter((c) => c.parent_id).map((c) => String(c.parent_id)));
+  const parentIds = new Set(
+    all.filter((c) => c.parent_id).map((c) => String(c.parent_id)),
+  );
 
   const leafNames = desc
     .filter((d) => !parentIds.has(String(d._id)))
@@ -66,22 +68,42 @@ async function buildProductDanhMucCondition(query) {
 exports.getProductFilterFacets = async (req, res) => {
   try {
     const rows = await Product.find({ trang_thai: { $ne: "ngung_ban" } })
-      .select("bien_the")
+      .select("bien_the thuong_hieu chat_lieu gia_hien_tai")
       .lean();
     const sizes = new Set();
     const colors = new Set();
+    const brands = new Set();
+    const materials = new Set();
+    let minPrice = Infinity;
+    let maxPrice = 0;
+
     for (const p of rows) {
+      // Lấy kích cỡ và màu sắc từ biến thể
       for (const v of p.bien_the || []) {
         const k = String(v.kich_co || "").trim();
         const m = String(v.mau_sac || "").trim();
         if (k) sizes.add(k);
         if (m) colors.add(m);
       }
+      // Lấy thương hiệu và chất liệu
+      const b = String(p.thuong_hieu || "").trim();
+      const c = String(p.chat_lieu || "").trim();
+      if (b) brands.add(b);
+      if (c) materials.add(c);
+      // Lấy khoảng giá
+      if (p.gia_hien_tai) {
+        minPrice = Math.min(minPrice, p.gia_hien_tai);
+        maxPrice = Math.max(maxPrice, p.gia_hien_tai);
+      }
     }
     const loc = (a, b) => a.localeCompare(b, "vi");
     res.json({
       kich_co: [...sizes].sort(loc),
       mau_sac: [...colors].sort(loc),
+      thuong_hieu: [...brands].sort(loc),
+      chat_lieu: [...materials].sort(loc),
+      gia_min: minPrice === Infinity ? 0 : minPrice,
+      gia_max: maxPrice,
     });
   } catch (err) {
     console.error(err);
@@ -93,7 +115,8 @@ exports.getProductFilterFacets = async (req, res) => {
 exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Sản phẩm không tồn tại!" });
+    if (!product)
+      return res.status(404).json({ message: "Sản phẩm không tồn tại!" });
 
     const reviews = await Review.find({
       san_pham_id: req.params.id,
@@ -144,12 +167,26 @@ exports.getAllProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 16;
     const skip = (page - 1) * limit;
 
-    const { danh_muc, danh_muc_slug, kich_co, mau_sac, sap_xep, q } = req.query;
+    const {
+      danh_muc,
+      danh_muc_slug,
+      kich_co,
+      mau_sac,
+      sap_xep,
+      q,
+      thuong_hieu,
+      chat_lieu,
+      gia_min,
+      gia_max,
+    } = req.query;
 
     // B. Xây dựng Query lọc (US05 & PB05 - 2.1)
     let queryCondition = { trang_thai: { $ne: "ngung_ban" } };
 
-    const dmCond = await buildProductDanhMucCondition({ danh_muc, danh_muc_slug });
+    const dmCond = await buildProductDanhMucCondition({
+      danh_muc,
+      danh_muc_slug,
+    });
     if (dmCond) queryCondition.danh_muc = dmCond;
 
     const kw = String(q || "").trim();
@@ -158,14 +195,37 @@ exports.getAllProducts = async (req, res) => {
       queryCondition.ten_san_pham = { $regex: esc, $options: "i" };
     }
 
+    // Filter theo thương hiệu
+    const brands = splitCsv(thuong_hieu);
+    if (brands.length) {
+      queryCondition.thuong_hieu = { $in: brands };
+    }
+
+    // Filter theo chất liệu
+    const materials = splitCsv(chat_lieu);
+    if (materials.length) {
+      queryCondition.chat_lieu = { $in: materials };
+    }
+
+    // Filter theo khoảng giá
+    if (gia_min || gia_max) {
+      queryCondition.gia_hien_tai = {};
+      if (gia_min) queryCondition.gia_hien_tai.$gte = Number(gia_min);
+      if (gia_max) queryCondition.gia_hien_tai.$lte = Number(gia_max);
+    }
+
     const sizes = splitCsv(kich_co);
     const colors = splitCsv(mau_sac);
     const variantParts = [];
     if (sizes.length) {
-      variantParts.push({ bien_the: { $elemMatch: { kich_co: { $in: sizes } } } });
+      variantParts.push({
+        bien_the: { $elemMatch: { kich_co: { $in: sizes } } },
+      });
     }
     if (colors.length) {
-      variantParts.push({ bien_the: { $elemMatch: { mau_sac: { $in: colors } } } });
+      variantParts.push({
+        bien_the: { $elemMatch: { mau_sac: { $in: colors } } },
+      });
     }
     if (variantParts.length) {
       queryCondition.$and = variantParts;
@@ -180,8 +240,7 @@ exports.getAllProducts = async (req, res) => {
     else if (sap_xep === "giam_gia") {
       queryCondition.phan_tram_giam_gia = { $gt: 0 };
       sortCondition = { phan_tram_giam_gia: -1 };
-    }
-    else sortCondition = { ngay_tao: -1 };
+    } else sortCondition = { ngay_tao: -1 };
 
     // D. Thực thi Query đồng thời để tối ưu hiệu năng
     const [products, totalProducts] = await Promise.all([

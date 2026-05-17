@@ -67,7 +67,12 @@ async function searchProducts(keyword) {
   const rx = new RegExp(escapeRx(q), "i");
   let list = await Product.find({
     trang_thai: { $ne: "ngung_ban" },
-    $or: [{ ten_san_pham: rx }, { mo_ta: rx }, { thuong_hieu: rx }, { danh_muc: rx }],
+    $or: [
+      { ten_san_pham: rx },
+      { mo_ta: rx },
+      { thuong_hieu: rx },
+      { danh_muc: rx },
+    ],
   })
     .limit(14)
     .lean();
@@ -167,7 +172,10 @@ function buildProductReplyText(cards, mau, size) {
       c.mau_variant || c.size_variant
         ? ` (${[c.mau_variant, c.size_variant].filter(Boolean).join(" · ")})`
         : "";
-    const ton = c.ton_kho > 0 ? `Còn ${c.ton_kho} sản phẩm` : "Đang hết hàng tại biến thể khớp — xem các lựa chọn khác trên trang chi tiết.";
+    const ton =
+      c.ton_kho > 0
+        ? `Còn ${c.ton_kho} sản phẩm`
+        : "Đang hết hàng tại biến thể khớp — xem các lựa chọn khác trên trang chi tiết.";
     const cl = c.chat_lieu ? `Chất liệu: ${c.chat_lieu}. ` : "";
     return `${i + 1}. ${c.ten_san_pham}${variantHint} — Giá: ${formatMoney(c.gia_hien_tai)}. ${cl}${ton}`;
   });
@@ -224,14 +232,22 @@ Tin nhắn khách (văn bản thuần, có thể có xuống dòng): ${JSON.stri
     const parsed = JSON.parse(raw);
     return {
       intent: parsed.intent || "khong_ro",
-      confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0.5,
+      confidence:
+        typeof parsed.confidence === "number" ? parsed.confidence : 0.5,
       ten_san_pham: String(parsed.ten_san_pham || "").trim(),
       mau_sac: String(parsed.mau_sac || "").trim(),
       kich_co: String(parsed.kich_co || "").trim(),
       chinh_sach_gap: String(parsed.chinh_sach_gap || "").trim(),
     };
   } catch {
-    return { intent: "khong_ro", confidence: 0.25, ten_san_pham: "", mau_sac: "", kich_co: "", chinh_sach_gap: "" };
+    return {
+      intent: "khong_ro",
+      confidence: 0.25,
+      ten_san_pham: "",
+      mau_sac: "",
+      kich_co: "",
+      chinh_sach_gap: "",
+    };
   }
 }
 
@@ -269,12 +285,20 @@ exports.createSession = async (req, res) => {
 
 exports.getSession = async (req, res) => {
   try {
-    const doc = await ChatSession.findOne({ session_token: req.params.token }).lean();
+    const doc = await ChatSession.findOne({
+      session_token: req.params.token,
+    }).lean();
     if (!doc) {
       return res.status(404).json({ message: "Không tìm thấy phiên chat." });
     }
-    if (doc.nguoi_dung_id && req.user && String(doc.nguoi_dung_id) !== String(req.user._id)) {
-      return res.status(403).json({ message: "Không có quyền xem phiên chat này." });
+    if (
+      doc.nguoi_dung_id &&
+      req.user &&
+      String(doc.nguoi_dung_id) !== String(req.user._id)
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Không có quyền xem phiên chat này." });
     }
     res.json({
       sessionId: doc.session_token,
@@ -299,7 +323,9 @@ exports.postMessage = async (req, res) => {
       return res.status(400).json({ message: "Tin nhắn không được để trống." });
     }
     if (textRaw.length > MAX_MESSAGE_LEN) {
-      return res.status(400).json({ message: `Tin nhắn tối đa ${MAX_MESSAGE_LEN} ký tự.` });
+      return res
+        .status(400)
+        .json({ message: `Tin nhắn tối đa ${MAX_MESSAGE_LEN} ký tự.` });
     }
 
     const session = await ChatSession.findOne({ session_token: sessionId });
@@ -307,8 +333,14 @@ exports.postMessage = async (req, res) => {
       return res.status(404).json({ message: "Phiên chat không tồn tại." });
     }
 
-    if (session.nguoi_dung_id && req.user && String(session.nguoi_dung_id) !== String(req.user._id)) {
-      return res.status(403).json({ message: "Không có quyền gửi trong phiên này." });
+    if (
+      session.nguoi_dung_id &&
+      req.user &&
+      String(session.nguoi_dung_id) !== String(req.user._id)
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Không có quyền gửi trong phiên này." });
     }
 
     if (!session.nguoi_dung_id && req.user) {
@@ -318,7 +350,8 @@ exports.postMessage = async (req, res) => {
     /** PB23: đã chuyển nhân viên hoặc nhân viên đã tiếp quản — bot không trả lời */
     if (session.handoff || session.staff_takeover) {
       session.messages.push({ role: "user", content: textRaw, at: new Date() });
-      while (session.messages.length > MAX_STORED_MESSAGES) session.messages.shift();
+      while (session.messages.length > MAX_STORED_MESSAGES)
+        session.messages.shift();
       await session.save();
       return res.json({
         reply: "",
@@ -334,7 +367,8 @@ exports.postMessage = async (req, res) => {
 
     if (HANDOFF_REGEX.test(textRaw)) {
       await applyHandoff(session, "keyword");
-      while (session.messages.length > MAX_STORED_MESSAGES) session.messages.shift();
+      while (session.messages.length > MAX_STORED_MESSAGES)
+        session.messages.shift();
       await session.save();
       return res.json({
         reply: HANDOFF_REPLY,
@@ -348,12 +382,38 @@ exports.postMessage = async (req, res) => {
     let reply = "";
     let products = [];
 
+    // Ưu tiên kiểm tra FAQ trước khi phân loại intent
+    const faqHit = await matchFaqAsync(textRaw);
+    if (faqHit) {
+      reply = `${faqHit.title}: ${faqHit.answer}`;
+      session.messages.push({
+        role: "assistant",
+        content: reply,
+        at: new Date(),
+      });
+      while (session.messages.length > MAX_STORED_MESSAGES)
+        session.messages.shift();
+      await session.save();
+      return res.json({
+        reply,
+        products: [],
+        handoff: session.handoff,
+        staff_takeover: Boolean(session.staff_takeover),
+        sessionId: session.session_token,
+      });
+    }
+
     const apiConfigured = Boolean(process.env.GEMINI_API_KEY);
     if (!apiConfigured) {
       reply =
         "Chatbot AI chưa được cấu hình khóa Gemini (GEMINI_API_KEY). Vui lòng liên hệ quản trị hoặc nhân viên.";
-      session.messages.push({ role: "assistant", content: reply, at: new Date() });
-      while (session.messages.length > MAX_STORED_MESSAGES) session.messages.shift();
+      session.messages.push({
+        role: "assistant",
+        content: reply,
+        at: new Date(),
+      });
+      while (session.messages.length > MAX_STORED_MESSAGES)
+        session.messages.shift();
       await session.save();
       return res.json({
         reply,
@@ -376,12 +436,20 @@ exports.postMessage = async (req, res) => {
       analysis = await geminiAnalyzeIntent(textRaw);
     } catch (e) {
       console.error("Gemini error:", e.message);
-      analysis = { intent: "khong_ro", confidence: 0.2, ten_san_pham: "", mau_sac: "", kich_co: "", chinh_sach_gap: "" };
+      analysis = {
+        intent: "khong_ro",
+        confidence: 0.2,
+        ten_san_pham: "",
+        mau_sac: "",
+        kich_co: "",
+        chinh_sach_gap: "",
+      };
     }
 
     if (analysis.intent === "chuyen_nhan_vien") {
       await applyHandoff(session, "intent");
-      while (session.messages.length > MAX_STORED_MESSAGES) session.messages.shift();
+      while (session.messages.length > MAX_STORED_MESSAGES)
+        session.messages.shift();
       await session.save();
       return res.json({
         reply: HANDOFF_REPLY,
@@ -399,7 +467,8 @@ exports.postMessage = async (req, res) => {
         if (!analysis.ten_san_pham) analysis.ten_san_pham = textRaw;
       } else {
         await applyHandoff(session, "low_conf");
-        while (session.messages.length > MAX_STORED_MESSAGES) session.messages.shift();
+        while (session.messages.length > MAX_STORED_MESSAGES)
+          session.messages.shift();
         await session.save();
         return res.json({
           reply: HANDOFF_REPLY,
@@ -420,7 +489,10 @@ exports.postMessage = async (req, res) => {
         reply =
           "NO NAME hiện hỗ trợ đổi trả trong 7 ngày (sản phẩm nguyên tem), giao hàng COD/chuyển khoản/VNPAY. Bạn muốn biết chi tiết phần nào (đổi trả, ship, thanh toán)? Hoặc gõ «gặp nhân viên» để được hỗ trợ trực tiếp.";
       }
-    } else if (analysis.intent === "san_pham" || looksLikeProductQuestion(textRaw)) {
+    } else if (
+      analysis.intent === "san_pham" ||
+      looksLikeProductQuestion(textRaw)
+    ) {
       const kw = analysis.ten_san_pham || textRaw;
       const rawList = await searchProducts(kw);
       products = buildProductCards(rawList, analysis.mau_sac, analysis.kich_co);
@@ -438,7 +510,8 @@ exports.postMessage = async (req, res) => {
       products: products.length ? products : undefined,
       at: new Date(),
     });
-    while (session.messages.length > MAX_STORED_MESSAGES) session.messages.shift();
+    while (session.messages.length > MAX_STORED_MESSAGES)
+      session.messages.shift();
     await session.save();
 
     res.json({
@@ -463,7 +536,9 @@ exports.listHandoffs = async (req, res) => {
     })
       .sort({ handoff_at: -1 })
       .limit(50)
-      .select("session_token handoff_at staff_takeover takeover_at nguoi_dung_id updatedAt messages")
+      .select(
+        "session_token handoff_at staff_takeover takeover_at nguoi_dung_id updatedAt messages",
+      )
       .lean();
 
     res.json({
@@ -475,11 +550,15 @@ exports.listHandoffs = async (req, res) => {
         takeover_at: r.takeover_at,
         nguoi_dung_id: r.nguoi_dung_id,
         updatedAt: r.updatedAt,
-        last_message: r.messages?.length ? r.messages[r.messages.length - 1] : null,
+        last_message: r.messages?.length
+          ? r.messages[r.messages.length - 1]
+          : null,
       })),
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Không tải được danh sách chuyển nhân viên." });
+    res
+      .status(500)
+      .json({ message: "Không tải được danh sách chuyển nhân viên." });
   }
 };

@@ -176,15 +176,15 @@ async function searchProducts(keyword, filters = {}) {
   if (filters.loai_san_pham) {
     const typeHint =
       filters.loai_san_pham === "giay"
-        ? /giay|dep|sneaker|boot|sandal|trainer|running/i
+        ? /giay|giày|giay dep|giày dép|dep|dép|boot|sandal|sneaker|running|trainer/i
         : filters.loai_san_pham === "ao"
-          ? /ao|polo|hoodie|cardigan|khoa|blazer|somi|oversize/i
+          ? /ao|áo|polo|hoodie|cardigan|khoác|khoacac|blazer|somi|sơ mi|so mi|oversize/i
           : filters.loai_san_pham === "quan"
-            ? /quan|jean|pants|short/i
+            ? /quan|quần|jean|jeans|pants|short|shorts|quần dài|quan dai|quần ngắn|quan ngan|quần đùi|quan dui/i
             : filters.loai_san_pham === "vay"
-              ? /vay|dress|skirt/i
+              ? /vay|váy|skirt|đầm|dam|dress/i
               : filters.loai_san_pham === "mu"
-                ? /mu|non|snapback|bucket|turban|be/i
+                ? /mu|mũ|mũ lưỡi trai|non|nón|snapback|bucket|turban|be|bé/i
                 : null;
 
     if (typeHint) {

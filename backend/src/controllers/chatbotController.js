@@ -71,7 +71,61 @@ const SEARCH_STOPWORDS = new Set([
   "duoc",
   "cac",
   "bay",
+  "bao",
+  "nhieu",
+  "tien",
+  "gia",
+  "hoi",
+  "xin",
+  "thong",
+  "tin",
+  "biet",
+  "vnd",
+  "dong",
+  "khoang",
+  "re",
+  "dat",
+  "mac",
+  "het",
+  "ton",
+  "duoi",
+  "tren",
+  "duong",
 ]);
+
+/** Từ khóa loại đồ chung — bỏ khi đã có loai_san_pham */
+const TYPE_ONLY_KEYWORDS = new Set(["ao", "quan", "vay", "giay", "mu", "tui"]);
+
+const SUBTYPE_KEYWORDS = new Set([
+  "polo",
+  "jean",
+  "hoodie",
+  "kaki",
+  "cardigan",
+  "sommi",
+  "thun",
+  "oversize",
+  "cargo",
+  "jogger",
+  "blazer",
+]);
+
+/** Câu hỏi tập trung vào giá */
+const PRICE_QUESTION_REGEX =
+  /\b(giá|gia|bao\s*nhiêu|bao\s*nhieu|mất\s*bao|mat\s*bao|giá\s*bao|gia\s*bao|giá\s*tiền|gia\s*tien|khoảng\s*giá|khoang\s*gia|giá\s*rẻ|gia\s*re|giá\s*đắt|gia\s*dat|under|price|cost|how\s*much)\b/i;
+
+function isPriceQuestion(text) {
+  return PRICE_QUESTION_REGEX.test(String(text || ""));
+}
+
+function hasProductKeyword(text, analysisProductName = "") {
+  if (analysisProductName && analysisProductName.trim().length >= 2) return true;
+  const meaningful = norm(text)
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length >= 2 && !SEARCH_STOPWORDS.has(w));
+  return meaningful.length > 0;
+}
 
 function escapeRx(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -92,8 +146,13 @@ function parseMoneyValue(raw, unit) {
     u.includes("ngan")
   )
     return Math.round(num * 1000);
-  if (u.includes("đ") || u.includes("d")) return Math.round(num);
-  return num >= 1000 ? Math.round(num) : Math.round(num * 1_000_000);
+  if (u === "đ" || u === "d" || u.includes("đồng") || u.includes("dong"))
+    return Math.round(num);
+  /** Không có đơn vị — quy ước thời trang VN: 350 ≈ 350.000đ; >=10000 = VND */
+  if (num >= 10000) return Math.round(num);
+  if (num >= 100) return Math.round(num * 1000);
+  if (num >= 1) return Math.round(num * 1000);
+  return Math.round(num);
 }
 
 function parseProductFilters(text) {
@@ -140,10 +199,28 @@ function parseProductFilters(text) {
     result.gia_min = parseMoneyValue(rangeMatch[1], rangeMatch[2]);
     result.gia_max = parseMoneyValue(rangeMatch[4], rangeMatch[5]);
   } else {
+    const kOnly = q.match(
+      /(?:dưới|duoi|trên|tren|từ|tu|khoảng|khoang|tầm|tam|khoảng)\s*([\d.,]+)\s*k\b/i,
+    );
+    if (kOnly) {
+      const v = parseMoneyValue(kOnly[1], "k");
+      if (/dưới|duoi/i.test(q)) result.gia_max = v;
+      else if (/trên|tren/i.test(q)) result.gia_min = v;
+      else {
+        result.gia_min = Math.round(v * 0.85);
+        result.gia_max = v;
+      }
+    }
+    const giaDuoiMatch = q.match(
+      /giá\s*dưới\s*([\d.,]+)\s*(triệu|tr|t|k|nghìn|nghin|đ|d)?/i,
+    );
+    if (giaDuoiMatch) {
+      result.gia_max = parseMoneyValue(giaDuoiMatch[1], giaDuoiMatch[2]);
+    }
     const underMatch = q.match(
       /dưới\s*([\d.,]+)\s*(triệu|tr|t|k|nghìn|nghin|đ|d)?/i,
     );
-    if (underMatch) {
+    if (underMatch && !result.gia_max) {
       result.gia_max = parseMoneyValue(underMatch[1], underMatch[2]);
     }
     const overMatch = q.match(
@@ -151,6 +228,12 @@ function parseProductFilters(text) {
     );
     if (overMatch) {
       result.gia_min = parseMoneyValue(overMatch[1], overMatch[2]);
+    }
+    const standaloneK = q.match(/([\d.,]+)\s*k\b/i);
+    if (!result.gia_min && !result.gia_max && standaloneK) {
+      const v = parseMoneyValue(standaloneK[1], "k");
+      result.gia_min = Math.round(v * 0.9);
+      result.gia_max = v;
     }
   }
 
@@ -169,9 +252,54 @@ function parseProductFilters(text) {
   return result;
 }
 
+function getEffectiveMinPrice(product) {
+  const prices = collectVariantPrices(product);
+  return prices.length ? Math.min(...prices) : 0;
+}
+
+function filterByEffectivePrice(products, giaMin, giaMax) {
+  if (!giaMin && !giaMax) return products;
+  return products.filter((p) => {
+    const minP = getEffectiveMinPrice(p);
+    if (!minP) return false;
+    if (giaMin && minP < Number(giaMin)) return false;
+    if (giaMax && minP > Number(giaMax)) return false;
+    return true;
+  });
+}
+
+/** Thêm điều kiện tên/mô tả theo từ khóa (dùng kèm loại sản phẩm) */
+function appendKeywordClause(queryCondition, q) {
+  const words = String(q || "")
+    .split(/\s+/)
+    .map((w) => w.trim().replace(/[^\p{L}\p{N}]/gu, ""))
+    .map((w) => norm(w))
+    .filter(
+      (w) =>
+        w.length >= 2 &&
+        !SEARCH_STOPWORDS.has(w) &&
+        !/^\d+k?$/.test(w) &&
+        (!TYPE_ONLY_KEYWORDS.has(w) || SUBTYPE_KEYWORDS.has(w)),
+    );
+  if (!words.length) return;
+
+  const lookahead = words.map((w) => `(?=.*${escapeRx(w)})`).join("");
+  const rx = new RegExp(`${lookahead}.*`, "i");
+  queryCondition.$and = queryCondition.$and || [];
+  queryCondition.$and.push({
+    $or: [
+      { ten_san_pham: rx },
+      { mo_ta: rx },
+      { thuong_hieu: rx },
+      { danh_muc: rx },
+    ],
+  });
+}
+
 async function searchProducts(keyword, filters = {}) {
   const q = String(keyword || "").trim();
   const queryCondition = { trang_thai: { $ne: "ngung_ban" } };
+  const hasPriceFilter = Boolean(filters.gia_min || filters.gia_max);
 
   if (filters.loai_san_pham) {
     const typeHint =
@@ -194,27 +322,29 @@ async function searchProducts(keyword, filters = {}) {
         { danh_muc: typeHint },
       ];
     }
+    if (q) appendKeywordClause(queryCondition, q);
   } else if (q) {
-    const words = q
-      .split(/\s+/)
-      .map((w) => w.trim().replace(/[^\p{L}\p{N}]/gu, ""))
-      .filter(
-        (w) =>
-          w.length >= 2 &&
-          !SEARCH_STOPWORDS.has(norm(w)) &&
-          !/^(size|cỡ|có|co|nào|nao|không|khong|màu|mau|giá|gia|hàng|hang|shop|bán|ban|cửa|cua|này|nay|ở|o|bên|ben|đây|day)$/i.test(
-            w,
-          ),
-      );
-    if (words.length) {
-      const lookahead = words.map((w) => `(?=.*${escapeRx(w)})`).join("");
-      const rx = new RegExp(`${lookahead}.*`, "i");
-      queryCondition.$or = [
-        { ten_san_pham: rx },
-        { mo_ta: rx },
-        { thuong_hieu: rx },
-        { danh_muc: rx },
-      ];
+    appendKeywordClause(queryCondition, q);
+    if (!queryCondition.$and?.length) {
+      const words = q
+        .split(/\s+/)
+        .map((w) => w.trim().replace(/[^\p{L}\p{N}]/gu, ""))
+        .filter(
+          (w) =>
+            w.length >= 2 &&
+            !SEARCH_STOPWORDS.has(norm(w)) &&
+            !/^\d+k?$/i.test(w),
+        );
+      if (words.length) {
+        const lookahead = words.map((w) => `(?=.*${escapeRx(w)})`).join("");
+        const rx = new RegExp(`${lookahead}.*`, "i");
+        queryCondition.$or = [
+          { ten_san_pham: rx },
+          { mo_ta: rx },
+          { thuong_hieu: rx },
+          { danh_muc: rx },
+        ];
+      }
     }
   }
 
@@ -222,20 +352,7 @@ async function searchProducts(keyword, filters = {}) {
     queryCondition.thuong_hieu = { $in: filters.brands };
   }
 
-  if (filters.gia_min || filters.gia_max) {
-    const priceCond = {};
-    if (filters.gia_min) priceCond.$gte = Number(filters.gia_min);
-    if (filters.gia_max) priceCond.$lte = Number(filters.gia_max);
-
-    queryCondition.$and = queryCondition.$and || [];
-    queryCondition.$and.push({
-      $or: [
-        { gia_hien_tai: priceCond },
-        { "bien_the.gia_ban": priceCond },
-        { "bien_the.gia_goc": priceCond },
-      ],
-    });
-  }
+  /** Giá: lọc theo giá bán thấp nhất (SP + biến thể) — không dùng gia_goc */
 
   const variantParts = [];
   if (filters.kich_co) {
@@ -272,8 +389,10 @@ async function searchProducts(keyword, filters = {}) {
     filters.mau_sac;
   if (!hasSearchCriteria) return [];
 
-  let list = await Product.find(queryCondition).limit(14).lean();
-  if (list.length) return list;
+  const fetchLimit = hasPriceFilter ? 80 : 14;
+  let list = await Product.find(queryCondition).limit(fetchLimit).lean();
+  list = filterByEffectivePrice(list, filters.gia_min, filters.gia_max);
+  if (list.length) return list.slice(0, 14);
 
   const hasExplicitFilter =
     filters.loai_san_pham ||
@@ -282,42 +401,142 @@ async function searchProducts(keyword, filters = {}) {
     filters.gia_max ||
     filters.kich_co ||
     filters.mau_sac;
-  if (hasExplicitFilter) return [];
 
-  if (!q && !filters.loai_san_pham) return [];
+  if (!q && !filters.loai_san_pham && hasExplicitFilter) return [];
 
   const nq = norm(q || filters.loai_san_pham || "");
   const all = await Product.find({ trang_thai: { $ne: "ngung_ban" } })
-    .limit(100)
+    .limit(120)
     .select(
       "ten_san_pham hinh_anh gia_hien_tai gia_goc chat_lieu bien_the so_luong_ton mo_ta trang_thai thuong_hieu danh_muc",
     )
     .lean();
-  const byPhrase = all.filter(
-    (p) =>
-      norm(p.ten_san_pham).includes(nq) ||
-      norm(p.mo_ta || "").includes(nq) ||
-      norm(p.thuong_hieu || "").includes(nq),
-  );
-  if (byPhrase.length) return byPhrase.slice(0, 10);
+
+  let candidates = all;
+  if (filters.loai_san_pham === "ao") {
+    const aoRx =
+      /ao|áo|polo|hoodie|cardigan|khoác|khoacac|blazer|somi|sơ mi|so mi|oversize/i;
+    candidates = candidates.filter(
+      (p) =>
+        aoRx.test(p.ten_san_pham || "") ||
+        aoRx.test(p.mo_ta || "") ||
+        aoRx.test(p.danh_muc || ""),
+    );
+  } else if (filters.loai_san_pham === "quan") {
+    const quanRx =
+      /quan|quần|jean|jeans|pants|short|shorts|quần dài|quan dai|quần ngắn|quan ngan|quần đùi|quan dui/i;
+    candidates = candidates.filter(
+      (p) =>
+        quanRx.test(p.ten_san_pham || "") ||
+        quanRx.test(p.mo_ta || "") ||
+        quanRx.test(p.danh_muc || ""),
+    );
+  } else if (filters.loai_san_pham === "giay") {
+    const giayRx =
+      /giay|giày|giay dep|giày dép|dep|dép|boot|sandal|sneaker|running|trainer/i;
+    candidates = candidates.filter(
+      (p) =>
+        giayRx.test(p.ten_san_pham || "") ||
+        giayRx.test(p.mo_ta || "") ||
+        giayRx.test(p.danh_muc || ""),
+    );
+  }
+
+  const byPhrase = candidates.filter((p) => {
+    const hay = `${norm(p.ten_san_pham)} ${norm(p.mo_ta || "")} ${norm(p.thuong_hieu || "")}`;
+    if (nq.length >= 2 && hay.includes(nq)) return true;
+    const words = nq
+      .split(/\s+/)
+      .filter((w) => w.length >= 2 && !SEARCH_STOPWORDS.has(w) && !TYPE_ONLY_KEYWORDS.has(w));
+    if (!words.length) return !q;
+    return words.every((w) => hay.includes(w));
+  });
+  let fallback = filterByEffectivePrice(byPhrase, filters.gia_min, filters.gia_max);
+  if (fallback.length) return fallback.slice(0, 10);
 
   const words = nq
     .split(/\s+/)
     .map((w) => w.trim())
-    .filter((w) => w.length >= 2 && !SEARCH_STOPWORDS.has(w));
-  if (!words.length) return [];
+    .filter(
+      (w) =>
+        w.length >= 2 &&
+        !SEARCH_STOPWORDS.has(w) &&
+        !TYPE_ONLY_KEYWORDS.has(w) &&
+        !/^\d+k?$/.test(w),
+    );
+  if (!words.length && !hasPriceFilter) return [];
 
   const scored = [];
-  for (const p of all) {
+  for (const p of candidates) {
     const hay = `${norm(p.ten_san_pham)} ${norm(p.mo_ta || "")} ${norm(p.thuong_hieu || "")} ${norm(p.danh_muc || "")}`;
     let score = 0;
     for (const w of words) {
       if (hay.includes(w)) score += 1;
     }
-    if (score > 0) scored.push({ p, score });
+    if (score > 0 || (!words.length && hasPriceFilter)) scored.push({ p, score });
   }
   scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, 10).map((x) => x.p);
+  fallback = filterByEffectivePrice(
+    scored.map((x) => x.p),
+    filters.gia_min,
+    filters.gia_max,
+  );
+  return fallback.slice(0, 10);
+}
+
+/** Từ khóa tìm sản phẩm — bỏ từ hỏi giá/stock, ưu tiên tên do Gemini trích */
+function buildSearchKeyword(text, geminiProductName = "") {
+  const fromGemini = String(geminiProductName || "").trim();
+  if (fromGemini.length >= 2) return fromGemini;
+
+  const words = norm(text)
+    .split(/\s+/)
+    .map((w) => w.trim().replace(/[^\p{L}\p{N}]/gu, ""))
+    .filter(
+      (w) =>
+        w.length >= 2 &&
+        !SEARCH_STOPWORDS.has(w) &&
+        !/^\d+k?$/i.test(w) &&
+        !/^(size|co|mau|gia|hang|shop|ban|cua|nay|day|ben|o)$/i.test(w),
+    );
+  const specific = words.filter(
+    (w) => !TYPE_ONLY_KEYWORDS.has(w) || SUBTYPE_KEYWORDS.has(w),
+  );
+  if (specific.length) return specific.join(" ");
+  if (words.length) return words.join(" ");
+  return String(text || "").trim();
+}
+
+function collectVariantPrices(product) {
+  const prices = [];
+  for (const v of product.bien_the || []) {
+    const p = Number(v.gia_ban) || Number(v.gia_goc) || 0;
+    if (p > 0) prices.push(p);
+  }
+  const base = Number(product.gia_hien_tai) || Number(product.gia_goc) || 0;
+  if (base > 0) prices.push(base);
+  return prices;
+}
+
+function getProductPriceBounds(product, variant = null) {
+  if (variant) {
+    const sale =
+      Number(variant.gia_ban) ||
+      Number(variant.gia_goc) ||
+      Number(product.gia_hien_tai) ||
+      0;
+    const origin =
+      Number(variant.gia_goc) ||
+      Number(product.gia_goc) ||
+      sale;
+    return { min: sale, max: sale, origin, sale };
+  }
+  const prices = collectVariantPrices(product);
+  if (!prices.length) return { min: 0, max: 0, origin: 0, sale: 0 };
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const origin = Number(product.gia_goc) || max;
+  return { min, max, origin, sale: min };
 }
 
 function pickVariantStock(product, mauRaw, sizeRaw) {
@@ -354,13 +573,15 @@ function pickVariantStock(product, mauRaw, sizeRaw) {
 function buildProductCards(products, mau, size) {
   return products.slice(0, 5).map((p) => {
     const { variant, stock } = pickVariantStock(p, mau, size);
-    const price =
-      variant?.gia_ban ?? variant?.gia_goc ?? p.gia_hien_tai ?? p.gia_goc ?? 0;
+    const bounds = getProductPriceBounds(p, variant);
     return {
       _id: String(p._id),
       ten_san_pham: p.ten_san_pham,
       hinh_anh: p.hinh_anh || "",
-      gia_hien_tai: price,
+      gia_hien_tai: bounds.sale,
+      gia_min: bounds.min,
+      gia_max: bounds.max,
+      gia_goc: bounds.origin > bounds.sale ? bounds.origin : null,
       chat_lieu: p.chat_lieu || "",
       ton_kho: stock,
       mau_variant: variant?.mau_sac || null,
@@ -375,25 +596,50 @@ function formatMoney(n) {
   return `${v.toLocaleString("vi-VN")}đ`;
 }
 
-function buildProductReplyText(cards, mau, size) {
+function formatPriceForCard(c) {
+  const min = Number(c.gia_min) || Number(c.gia_hien_tai) || 0;
+  const max = Number(c.gia_max) || min;
+  let label;
+  if (min > 0 && max > min) {
+    label = `${formatMoney(min)} – ${formatMoney(max)}`;
+  } else if (min > 0) {
+    label = formatMoney(min);
+  } else {
+    label = "Liên hệ / xem trang chi tiết";
+  }
+  if (c.gia_goc && Number(c.gia_goc) > min) {
+    label += ` (giá gốc ${formatMoney(c.gia_goc)})`;
+  }
+  return label;
+}
+
+function buildProductReplyText(cards, mau, size, priceFocus = false) {
   if (!cards.length) return null;
   const lines = cards.map((c, i) => {
     const variantHint =
       c.mau_variant || c.size_variant
         ? ` (${[c.mau_variant, c.size_variant].filter(Boolean).join(" · ")})`
         : "";
-    const ton =
-      c.ton_kho > 0
-        ? `Còn ${c.ton_kho} sản phẩm`
-        : "Đang hết hàng tại biến thể khớp — xem các lựa chọn khác trên trang chi tiết.";
-    const cl = c.chat_lieu ? `Chất liệu: ${c.chat_lieu}. ` : "";
-    return `${i + 1}. ${c.ten_san_pham}${variantHint} — Giá: ${formatMoney(c.gia_hien_tai)}. ${cl}${ton}`;
+    const priceLine = `Giá: ${formatPriceForCard(c)}`;
+    const ton = priceFocus
+      ? ""
+      : c.ton_kho > 0
+        ? ` Còn ${c.ton_kho} sp.`
+        : " Hết hàng tại size/màu này — xem biến thể khác trên trang chi tiết.";
+    const cl =
+      !priceFocus && c.chat_lieu ? ` Chất liệu: ${c.chat_lieu}.` : "";
+    return `${i + 1}. ${c.ten_san_pham}${variantHint} — ${priceLine}.${cl}${ton}`;
   });
-  let head = "";
+  let head = priceFocus
+    ? "Giá tham khảo tại NO NAME (có thể khác theo màu/size):\n"
+    : "";
   if (mau || size) {
-    head = `Thông tin theo yêu cầu (màu/size): ${[mau, size].filter(Boolean).join(", ") || "chưa rõ"}.\n`;
+    head += `Theo màu/size: ${[mau, size].filter(Boolean).join(", ")}.\n`;
   }
-  return `${head}${lines.join("\n")}\n\nBạn có thể mở thẻ sản phẩm bên dưới để xem chi tiết và đặt hàng.`;
+  const foot = priceFocus
+    ? "\nGiá trên lấy từ hệ thống; mở thẻ sản phẩm để xem đúng biến thể và đặt hàng."
+    : "\nBạn có thể mở thẻ sản phẩm bên dưới để xem chi tiết và đặt hàng.";
+  return `${head}${lines.join("\n")}${foot}`;
 }
 
 async function geminiAnalyzeIntent(userText) {
@@ -402,6 +648,7 @@ async function geminiAnalyzeIntent(userText) {
     return {
       intent: "khong_ro",
       confidence: 0,
+      hoi_gia: false,
       ten_san_pham: "",
       mau_sac: "",
       kich_co: "",
@@ -422,13 +669,15 @@ async function geminiAnalyzeIntent(userText) {
 {
   "intent": "san_pham" | "chinh_sach" | "chuyen_nhan_vien" | "khong_ro",
   "confidence": số từ 0 đến 1,
+  "hoi_gia": true hoặc false,
   "ten_san_pham": chuỗi tên sản phẩm gợi ý hoặc "",
   "mau_sac": chuỗi màu hoặc "",
   "kich_co": chuỗi size (S,M,L,XL,...) hoặc "",
   "chinh_sach_gap": từ khóa chủ đề chính sách hoặc ""
 }
 Quy tắc:
-- san_pham: hỏi giá, còn hàng, size, màu, mua; **mọi câu có/không có loại đồ** (áo polo, quần jean, mũ/nón, phụ kiện…), ví dụ «shop có áo polo nam không», «ở đây có mũ không», «bên bạn bán khoác không» → luôn san_pham, confidence >= 0.75, điền ten_san_pham là cụm tìm kiếm ngắn (vd: «áo polo nam», «mũ»).
+- san_pham: hỏi giá, còn hàng, size, màu, mua; **mọi câu có/không có loại đồ** (áo polo, quần jean, mũ/nón, phụ kiện…), ví dụ «shop có áo polo nam không», «ở đây có mũ không», «bên bạn bán khoác không» → luôn san_pham, confidence >= 0.75.
+- Hỏi giá («giá bao nhiêu», «polo bao nhiêu tiền», «dưới 500k»): intent=san_pham, hoi_gia=true, ten_san_pham CHỈ là tên/mã sản phẩm (vd «áo polo nam», «quần jean») — KHÔNG gồm từ «giá», «bao nhiêu», «tiền».
 - chinh_sach: đổi trả, hoàn tiền, vận chuyển, thanh toán, bảo hành.
 - chuyen_nhan_vien: muốn người thật, khiếu nại phức tạp.
 - khong_ro: chỉ khi thực sự không liên quan shop/quần áo/chính sách.
@@ -444,6 +693,7 @@ Tin nhắn khách (văn bản thuần, có thể có xuống dòng): ${JSON.stri
       intent: parsed.intent || "khong_ro",
       confidence:
         typeof parsed.confidence === "number" ? parsed.confidence : 0.5,
+      hoi_gia: Boolean(parsed.hoi_gia),
       ten_san_pham: String(parsed.ten_san_pham || "").trim(),
       mau_sac: String(parsed.mau_sac || "").trim(),
       kich_co: String(parsed.kich_co || "").trim(),
@@ -453,6 +703,7 @@ Tin nhắn khách (văn bản thuần, có thể có xuống dòng): ${JSON.stri
     return {
       intent: "khong_ro",
       confidence: 0.25,
+      hoi_gia: false,
       ten_san_pham: "",
       mau_sac: "",
       kich_co: "",
@@ -656,18 +907,23 @@ exports.postMessage = async (req, res) => {
     let analysis = {
       intent: "khong_ro",
       confidence: 0.5,
+      hoi_gia: false,
       ten_san_pham: "",
       mau_sac: "",
       kich_co: "",
       chinh_sach_gap: "",
     };
+    const priceFocus =
+      isPriceQuestion(textRaw);
     try {
       analysis = await geminiAnalyzeIntent(textRaw);
+      if (priceFocus) analysis.hoi_gia = true;
     } catch (e) {
       console.error("Gemini error:", e.message);
       analysis = {
         intent: "khong_ro",
         confidence: 0.2,
+        hoi_gia: priceFocus,
         ten_san_pham: "",
         mau_sac: "",
         kich_co: "",
@@ -728,25 +984,48 @@ exports.postMessage = async (req, res) => {
       }
     } else if (
       analysis.intent === "san_pham" ||
-      looksLikeProductQuestion(textRaw)
+      looksLikeProductQuestion(textRaw) ||
+      priceFocus
     ) {
-      const filters = parseProductFilters(textRaw);
-      const hasExplicitSize = /(?:size|cỡ|kích\s*cỡ)\b/i.test(textRaw);
-      const hasExplicitColor = /(?:màu|mau)\b/i.test(textRaw);
-      const appliedFilters = {
-        ...filters,
-        kich_co: filters.kich_co || (hasExplicitSize ? analysis.kich_co : null),
-        mau_sac:
-          filters.mau_sac || (hasExplicitColor ? analysis.mau_sac : null),
-      };
-      const kw = analysis.ten_san_pham || filters.keyword || textRaw;
-      const rawList = await searchProducts(kw, appliedFilters);
-      const responseSize = appliedFilters.kich_co;
-      const responseColor = appliedFilters.mau_sac;
-      products = buildProductCards(rawList, responseColor, responseSize);
-      reply =
-        buildProductReplyText(products, responseColor, responseSize) ||
-        "Hiện không tìm thấy mặt hàng nào khớp yêu cầu. Bạn thử tìm kiếm lại với từ khóa khác hoặc tham khảo các mặt hàng khác trong danh mục nhé.";
+      const priceFilters = parseProductFilters(textRaw);
+      const askingPrice =
+        priceFocus ||
+        analysis.hoi_gia ||
+        Boolean(priceFilters.gia_min || priceFilters.gia_max);
+      if (
+        askingPrice &&
+        !hasProductKeyword(textRaw, analysis.ten_san_pham) &&
+        !priceFilters.gia_min &&
+        !priceFilters.gia_max
+      ) {
+        reply =
+          "Bạn muốn xem giá sản phẩm nào? Gửi giúp mình tên cụ thể (vd: «áo polo nam», «quần jean») hoặc khoảng giá (vd: «đồ dưới 500k») để mình tra chính xác nhé.";
+      } else {
+        const filters = priceFilters;
+        const hasExplicitSize = /(?:size|cỡ|kích\s*cỡ)\b/i.test(textRaw);
+        const hasExplicitColor = /(?:màu|mau)\b/i.test(textRaw);
+        const appliedFilters = {
+          ...filters,
+          kich_co: filters.kich_co || (hasExplicitSize ? analysis.kich_co : null),
+          mau_sac:
+            filters.mau_sac || (hasExplicitColor ? analysis.mau_sac : null),
+        };
+        const kw = buildSearchKeyword(textRaw, analysis.ten_san_pham);
+        const rawList = await searchProducts(kw, appliedFilters);
+        const responseSize = appliedFilters.kich_co;
+        const responseColor = appliedFilters.mau_sac;
+        products = buildProductCards(rawList, responseColor, responseSize);
+        reply =
+          buildProductReplyText(
+            products,
+            responseColor,
+            responseSize,
+            askingPrice,
+          ) ||
+          (askingPrice
+            ? "Chưa tìm thấy sản phẩm khớp để báo giá. Bạn thử tên khác (vd: «hoodie», «quần kaki») hoặc gõ «gặp nhân viên»."
+            : "Hiện không tìm thấy mặt hàng nào khớp yêu cầu. Bạn thử tìm kiếm lại với từ khóa khác hoặc tham khảo các mặt hàng khác trong danh mục nhé.");
+      }
     } else {
       reply =
         "Mình chưa hiểu rõ yêu cầu. Bạn có thể hỏi cụ thể về một sản phẩm (tên, màu, size) hoặc chính sách đổi trả / vận chuyển. Gõ «gặp nhân viên» nếu cần hỗ trợ trực tiếp.";

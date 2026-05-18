@@ -162,6 +162,23 @@ async function revenueSeries(granularity, y, m, d) {
       buckets.push({ key: String(day), label: String(day), revenue: total });
     }
     return buckets;
+    const start = new Date(y, m - 1, 1);
+    const end = new Date(y, m, 0, 23, 59, 59, 999);
+    const stats = await Order.aggregate([
+      { $match: { createdAt: { $gte: start, $lte: end }, trang_thai_don: { $ne: "huy" } } },
+      {
+        $group: {
+          _id: { $dayOfMonth: "$createdAt" },
+          total: { $sum: "$tong_cong" }
+        }
+      }
+    ]);
+    const lastDay = daysInMonth(y, m);
+    return Array.from({ length: lastDay }, (_, i) => {
+      const day = i + 1;
+      const found = stats.find(s => s._id === day);
+      return { key: String(day), label: String(day), revenue: found ? found.total : 0 };
+    });
   }
 
   const buckets = [];

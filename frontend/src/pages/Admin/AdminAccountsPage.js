@@ -207,14 +207,14 @@ const AdminAccountsPage = () => {
       );
       setMsg(res.data.message || "Đã cập nhật.");
       closeModal();
-      await fetchList();
+      await fetchList(); 
     } catch (e) {
       setMsg(e.response?.data?.message || "Vui lòng kiểm tra lại thông tin");
     } finally {
       setSaving(false);
     }
   };
-
+  
   const handleDelete = async (row) => {
     if (row.vai_tro === "admin") {
       window.alert("Bạn không thể xóa tài khoản Admin");

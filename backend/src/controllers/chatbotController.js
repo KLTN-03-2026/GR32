@@ -207,7 +207,8 @@ async function searchProducts(keyword, filters = {}) {
           ),
       );
     if (words.length) {
-      const rx = new RegExp(words.map(escapeRx).join("|"), "i");
+      const lookahead = words.map((w) => `(?=.*${escapeRx(w)})`).join("");
+      const rx = new RegExp(`${lookahead}.*`, "i");
       queryCondition.$or = [
         { ten_san_pham: rx },
         { mo_ta: rx },

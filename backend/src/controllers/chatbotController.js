@@ -16,6 +16,22 @@ const HANDOFF_REPLY =
 const HANDOFF_REGEX =
   /gặp\s*nhân\s*viên|tu\s*van\s*viên|tư\s*vấn\s*viên|nói\s*chuyện\s*với\s*nhân\s*viên|chuyển\s*sang\s*nhân\s*viên|hotline\s*người\s*thật/i;
 
+const GREETING_REGEX =
+  /\b(chào|xin chào|hi|hello|hey|bạn khỏe|bạn ổn|có ai ở đây|rảnh không|nói chuyện|cảm ơn|thanks|thank you)\b/i;
+
+function isGreetingOrSmallTalk(text) {
+  return GREETING_REGEX.test(String(text || ""));
+}
+
+function smallTalkReply() {
+  return (
+    "Xin chào! Mình là trợ lý AI NO NAME. " +
+    "Mình hỗ trợ tra cứu sản phẩm, giá, size, tồn kho và chính sách. " +
+    "Bạn có thể hỏi: 'shop có áo polo không', 'còn size 32 không', 'ship bao nhiêu', " +
+    "hoặc gõ 'gặp nhân viên' nếu cần hỗ trợ trực tiếp."
+  );
+}
+
 /** Tin nhắn có vẻ hỏi hàng / giá / size — không handoff chỉ vì Gemini “không rõ” */
 const PRODUCT_QUESTION_HINT =
   /áo|quần|polo|jean|kaki|cardigan|hoodie|sơ\s*mi|sommi|giày|dép|túi|balo|váy|đầm|khoác|blazer|quần\s*đùi|đồ\s*bộ|thời\s*trang|mũ|nón|snapback|bucket|tất|vớ|khăn|kính|phụ\s*kiện|size|màu|giá|tồn|còn\s*hàng|hết\s*hàng|có\s*bán|bán\s*không|cửa\s*hàng|shop|ở\s*đây\s*có|chỗ\s*này\s*có|bên\s*bạn\s*có|bên\s*này\s*có|\bcó\s+gì\s+bán\b|\bcó\s+bán\s+gì\b/i;
@@ -61,23 +77,215 @@ function escapeRx(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-async function searchProducts(keyword) {
+function parseMoneyValue(raw, unit) {
+  const cleaned = String(raw).trim().replace(/,/g, ".");
+  const num = parseFloat(cleaned);
+  if (Number.isNaN(num)) return null;
+  const u = String(unit || "").toLowerCase();
+  if (u.includes("triệu") || u.includes("trieu") || u === "tr" || u === "t")
+    return Math.round(num * 1_000_000);
+  if (
+    u.includes("k") ||
+    u.includes("nghìn") ||
+    u.includes("nghin") ||
+    u.includes("ngàn") ||
+    u.includes("ngan")
+  )
+    return Math.round(num * 1000);
+  if (u.includes("đ") || u.includes("d")) return Math.round(num);
+  return num >= 1000 ? Math.round(num) : Math.round(num * 1_000_000);
+}
+
+function parseProductFilters(text) {
+  const q = String(text || "").toLowerCase();
+  const result = {
+    keyword: q,
+    loai_san_pham: null,
+    brands: [],
+    mau_sac: null,
+    kich_co: null,
+    gia_min: null,
+    gia_max: null,
+  };
+
+  const productTypeMap = {
+    "giay|giày|giay dep|giày dép|dep|dép|boot|sandal|sneaker|running|trainer":
+      "giay",
+    "ao|áo|polo|t-shirt|thun|oversize|cardigan|hoodie|khoacac|khoác|áo sơ mi|ao so mi|somi|áo dài tay|ao dai tay|áo crep|ao crep|crep":
+      "ao",
+    "quan|quần|jean|jeans|pants|short|shorts|quần dài|quan dai|quần ngắn|quan ngan|quần đùi|quan dui":
+      "quan",
+    "vay|váy|skirt|đầm|dam|dress": "vay",
+    "mu|mũ|non|nón|snapback|bucket|be|bé|be non|turban": "mu",
+    "tui|túi|ba lo|balo|túi xách|tui xach|clutch|backpack": "tui",
+    van: "an khan",
+    "tat|tất|vo|ông|ong": "tat",
+    "thao mao|mao|áo thảo|ao thao": "do_thao",
+    "tai khoan|account|email": "account",
+  };
+
+  const boundary = "(?:^|\s|[.,;:!?])";
+  for (const [pattern, type] of Object.entries(productTypeMap)) {
+    const rx = new RegExp(`${boundary}(${pattern})${boundary}`, "i");
+    if (rx.test(q)) {
+      result.loai_san_pham = type;
+      break;
+    }
+  }
+
+  const rangeMatch = q.match(
+    /từ\s*([\d.,]+)\s*(triệu|tr|t|k|nghìn|nghin|đ|d)?\s*(đến|den|tới|toi)\s*([\d.,]+)\s*(triệu|tr|t|k|nghìn|nghin|đ|d)?/i,
+  );
+  if (rangeMatch) {
+    result.gia_min = parseMoneyValue(rangeMatch[1], rangeMatch[2]);
+    result.gia_max = parseMoneyValue(rangeMatch[4], rangeMatch[5]);
+  } else {
+    const underMatch = q.match(
+      /dưới\s*([\d.,]+)\s*(triệu|tr|t|k|nghìn|nghin|đ|d)?/i,
+    );
+    if (underMatch) {
+      result.gia_max = parseMoneyValue(underMatch[1], underMatch[2]);
+    }
+    const overMatch = q.match(
+      /trên\s*([\d.,]+)\s*(triệu|tr|t|k|nghìn|nghin|đ|d)?/i,
+    );
+    if (overMatch) {
+      result.gia_min = parseMoneyValue(overMatch[1], overMatch[2]);
+    }
+  }
+
+  const sizeMatch = q.match(
+    /(?:size|cỡ|kích\s*cỡ)\s*([0-9]+|xxs|xs|s|m|l|xl|xxl|3xl|4xl)/i,
+  );
+  if (sizeMatch) {
+    result.kich_co = sizeMatch[1].toUpperCase();
+  }
+
+  const colorMatch = q.match(/(?:màu|mau)\s*([a-z0-9\săéêôơưũ]+)/i);
+  if (colorMatch) {
+    result.mau_sac = colorMatch[1].trim();
+  }
+
+  return result;
+}
+
+async function searchProducts(keyword, filters = {}) {
   const q = String(keyword || "").trim();
-  if (!q) return [];
-  const rx = new RegExp(escapeRx(q), "i");
-  let list = await Product.find({
-    trang_thai: { $ne: "ngung_ban" },
-    $or: [
-      { ten_san_pham: rx },
-      { mo_ta: rx },
-      { thuong_hieu: rx },
-      { danh_muc: rx },
-    ],
-  })
-    .limit(14)
-    .lean();
+  const queryCondition = { trang_thai: { $ne: "ngung_ban" } };
+
+  if (filters.loai_san_pham) {
+    const typeHint =
+      filters.loai_san_pham === "giay"
+        ? /giay|dep|sneaker|boot|sandal|trainer|running/i
+        : filters.loai_san_pham === "ao"
+          ? /ao|polo|hoodie|cardigan|khoa|blazer|somi|oversize/i
+          : filters.loai_san_pham === "quan"
+            ? /quan|jean|pants|short/i
+            : filters.loai_san_pham === "vay"
+              ? /vay|dress|skirt/i
+              : filters.loai_san_pham === "mu"
+                ? /mu|non|snapback|bucket|turban|be/i
+                : null;
+
+    if (typeHint) {
+      queryCondition.$or = [
+        { ten_san_pham: typeHint },
+        { mo_ta: typeHint },
+        { danh_muc: typeHint },
+      ];
+    }
+  } else if (q) {
+    const words = q
+      .split(/\s+/)
+      .map((w) => w.trim().replace(/[^\p{L}\p{N}]/gu, ""))
+      .filter(
+        (w) =>
+          w.length >= 2 &&
+          !SEARCH_STOPWORDS.has(norm(w)) &&
+          !/^(size|cỡ|có|co|nào|nao|không|khong|màu|mau|giá|gia|hàng|hang|shop|bán|ban|cửa|cua|này|nay|ở|o|bên|ben|đây|day)$/i.test(
+            w,
+          ),
+      );
+    if (words.length) {
+      const rx = new RegExp(words.map(escapeRx).join("|"), "i");
+      queryCondition.$or = [
+        { ten_san_pham: rx },
+        { mo_ta: rx },
+        { thuong_hieu: rx },
+        { danh_muc: rx },
+      ];
+    }
+  }
+
+  if (filters.brands?.length) {
+    queryCondition.thuong_hieu = { $in: filters.brands };
+  }
+
+  if (filters.gia_min || filters.gia_max) {
+    const priceCond = {};
+    if (filters.gia_min) priceCond.$gte = Number(filters.gia_min);
+    if (filters.gia_max) priceCond.$lte = Number(filters.gia_max);
+
+    queryCondition.$and = queryCondition.$and || [];
+    queryCondition.$and.push({
+      $or: [
+        { gia_hien_tai: priceCond },
+        { "bien_the.gia_ban": priceCond },
+        { "bien_the.gia_goc": priceCond },
+      ],
+    });
+  }
+
+  const variantParts = [];
+  if (filters.kich_co) {
+    variantParts.push({
+      bien_the: {
+        $elemMatch: {
+          kich_co: { $regex: new RegExp(escapeRx(filters.kich_co), "i") },
+        },
+      },
+    });
+  }
+  if (filters.mau_sac) {
+    variantParts.push({
+      bien_the: {
+        $elemMatch: {
+          mau_sac: { $regex: new RegExp(escapeRx(filters.mau_sac), "i") },
+        },
+      },
+    });
+  }
+  if (variantParts.length) {
+    queryCondition.$and = queryCondition.$and
+      ? queryCondition.$and.concat(variantParts)
+      : variantParts;
+  }
+
+  const hasSearchCriteria =
+    filters.loai_san_pham ||
+    q ||
+    filters.brands?.length ||
+    filters.gia_min ||
+    filters.gia_max ||
+    filters.kich_co ||
+    filters.mau_sac;
+  if (!hasSearchCriteria) return [];
+
+  let list = await Product.find(queryCondition).limit(14).lean();
   if (list.length) return list;
-  const nq = norm(q);
+
+  const hasExplicitFilter =
+    filters.loai_san_pham ||
+    filters.brands?.length ||
+    filters.gia_min ||
+    filters.gia_max ||
+    filters.kich_co ||
+    filters.mau_sac;
+  if (hasExplicitFilter) return [];
+
+  if (!q && !filters.loai_san_pham) return [];
+
+  const nq = norm(q || filters.loai_san_pham || "");
   const all = await Product.find({ trang_thai: { $ne: "ngung_ban" } })
     .limit(100)
     .select(
@@ -145,7 +353,8 @@ function pickVariantStock(product, mauRaw, sizeRaw) {
 function buildProductCards(products, mau, size) {
   return products.slice(0, 5).map((p) => {
     const { variant, stock } = pickVariantStock(p, mau, size);
-    const price = p.gia_hien_tai ?? p.gia_goc ?? 0;
+    const price =
+      variant?.gia_ban ?? variant?.gia_goc ?? p.gia_hien_tai ?? p.gia_goc ?? 0;
     return {
       _id: String(p._id),
       ten_san_pham: p.ten_san_pham,
@@ -379,6 +588,25 @@ exports.postMessage = async (req, res) => {
       });
     }
 
+    if (isGreetingOrSmallTalk(textRaw)) {
+      const replyText = smallTalkReply();
+      session.messages.push({
+        role: "assistant",
+        content: replyText,
+        at: new Date(),
+      });
+      while (session.messages.length > MAX_STORED_MESSAGES)
+        session.messages.shift();
+      await session.save();
+      return res.json({
+        reply: replyText,
+        products: [],
+        handoff: false,
+        staff_takeover: Boolean(session.staff_takeover),
+        sessionId: session.session_token,
+      });
+    }
+
     let reply = "";
     let products = [];
 
@@ -465,18 +693,26 @@ exports.postMessage = async (req, res) => {
         analysis.intent = "san_pham";
         analysis.confidence = 0.55;
         if (!analysis.ten_san_pham) analysis.ten_san_pham = textRaw;
-      } else {
-        await applyHandoff(session, "low_conf");
+      } else if (isGreetingOrSmallTalk(textRaw)) {
+        const replyText = smallTalkReply();
+        session.messages.push({
+          role: "assistant",
+          content: replyText,
+          at: new Date(),
+        });
         while (session.messages.length > MAX_STORED_MESSAGES)
           session.messages.shift();
         await session.save();
         return res.json({
-          reply: HANDOFF_REPLY,
+          reply: replyText,
           products: [],
-          handoff: true,
+          handoff: false,
           staff_takeover: Boolean(session.staff_takeover),
           sessionId: session.session_token,
         });
+      } else {
+        reply =
+          "Mình chưa rõ lắm. Bạn có thể hỏi cụ thể về sản phẩm, giá, size, hoặc chính sách đổi trả / vận chuyển. Gõ 'gặp nhân viên' nếu muốn nhân viên hỗ trợ trực tiếp.";
       }
     }
 
@@ -493,12 +729,23 @@ exports.postMessage = async (req, res) => {
       analysis.intent === "san_pham" ||
       looksLikeProductQuestion(textRaw)
     ) {
-      const kw = analysis.ten_san_pham || textRaw;
-      const rawList = await searchProducts(kw);
-      products = buildProductCards(rawList, analysis.mau_sac, analysis.kich_co);
+      const filters = parseProductFilters(textRaw);
+      const hasExplicitSize = /(?:size|cỡ|kích\s*cỡ)\b/i.test(textRaw);
+      const hasExplicitColor = /(?:màu|mau)\b/i.test(textRaw);
+      const appliedFilters = {
+        ...filters,
+        kich_co: filters.kich_co || (hasExplicitSize ? analysis.kich_co : null),
+        mau_sac:
+          filters.mau_sac || (hasExplicitColor ? analysis.mau_sac : null),
+      };
+      const kw = analysis.ten_san_pham || filters.keyword || textRaw;
+      const rawList = await searchProducts(kw, appliedFilters);
+      const responseSize = appliedFilters.kich_co;
+      const responseColor = appliedFilters.mau_sac;
+      products = buildProductCards(rawList, responseColor, responseSize);
       reply =
-        buildProductReplyText(products, analysis.mau_sac, analysis.kich_co) ||
-        "Hiện không tìm thấy sản phẩm khớp mô tả. Bạn thử gọi tên rõ hơn hoặc xem danh mục trên website nhé.";
+        buildProductReplyText(products, responseColor, responseSize) ||
+        "Hiện không tìm thấy mặt hàng nào khớp yêu cầu. Bạn thử tìm kiếm lại với từ khóa khác hoặc tham khảo các mặt hàng khác trong danh mục nhé.";
     } else {
       reply =
         "Mình chưa hiểu rõ yêu cầu. Bạn có thể hỏi cụ thể về một sản phẩm (tên, màu, size) hoặc chính sách đổi trả / vận chuyển. Gõ «gặp nhân viên» nếu cần hỗ trợ trực tiếp.";

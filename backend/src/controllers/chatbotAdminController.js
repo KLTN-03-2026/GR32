@@ -1,7 +1,7 @@
 const ChatbotFaq = require("../models/ChatbotFaq");
 const ChatbotAuditLog = require("../models/ChatbotAuditLog");
 const ChatSession = require("../models/ChatSession");
-const { FAQ_ENTRIES, norm } = require("../utils/chatbotFaq");
+const { norm } = require("../utils/chatbotFaq");
 
 const MAX_STAFF_MSG = 500;
 const ALLOWED_DM = ["doi_tra", "van_chuyen", "thanh_toan", "san_pham"];
@@ -10,7 +10,11 @@ const END_SUPPORT_MSG =
   "Nhân viên đã kết thúc phiên hỗ trợ. Bạn có thể tiếp tục hỏi trợ lý AI.";
 
 function pickCustomerName(populatedUser) {
-  if (populatedUser && typeof populatedUser === "object" && populatedUser.ho_va_ten) {
+  if (
+    populatedUser &&
+    typeof populatedUser === "object" &&
+    populatedUser.ho_va_ten
+  ) {
     const n = String(populatedUser.ho_va_ten).trim();
     return n || "Khách";
   }
@@ -49,22 +53,6 @@ function detailHeadline(doc) {
   return "Phiên AI đang xử lý";
 }
 
-async function seedDefaultFaqsIfEmpty() {
-  const n = await ChatbotFaq.countDocuments();
-  if (n > 0) return;
-  for (let i = 0; i < FAQ_ENTRIES.length; i++) {
-    const e = FAQ_ENTRIES[i];
-    await ChatbotFaq.create({
-      cau_hoi_mau: e.title,
-      cau_tra_loi: e.answer,
-      tu_khoa: e.keys,
-      danh_muc: e.danh_muc || "san_pham",
-      thu_tu: i,
-      hoat_dong: true,
-    });
-  }
-}
-
 async function logAudit(hanh_dong, nguoiId, chiTiet) {
   await ChatbotAuditLog.create({
     hanh_dong,
@@ -76,9 +64,14 @@ async function logAudit(hanh_dong, nguoiId, chiTiet) {
 /** GET /api/chat/admin/faq */
 exports.listFaq = async (req, res) => {
   try {
-    await seedDefaultFaqsIfEmpty();
     await ChatbotFaq.updateMany(
-      { $or: [{ danh_muc: { $exists: false } }, { danh_muc: null }, { danh_muc: "" }] },
+      {
+        $or: [
+          { danh_muc: { $exists: false } },
+          { danh_muc: null },
+          { danh_muc: "" },
+        ],
+      },
       { $set: { danh_muc: "san_pham" } },
     );
 
@@ -86,7 +79,9 @@ exports.listFaq = async (req, res) => {
     const filter = {};
     if (dm && ALLOWED_DM.includes(dm)) filter.danh_muc = dm;
 
-    let rows = await ChatbotFaq.find(filter).sort({ thu_tu: 1, createdAt: 1 }).lean();
+    let rows = await ChatbotFaq.find(filter)
+      .sort({ thu_tu: 1, createdAt: 1 })
+      .lean();
 
     const qRaw = String(req.query.q || "").trim();
     if (qRaw) {
@@ -113,7 +108,9 @@ exports.createFaq = async (req, res) => {
     const cau_tra_loi = String(req.body.cau_tra_loi || "").trim();
     const danh_muc = String(req.body.danh_muc || "").trim();
     if (!cau_hoi_mau || !cau_tra_loi) {
-      return res.status(400).json({ message: "Câu hỏi mẫu và câu trả lời không được để trống." });
+      return res
+        .status(400)
+        .json({ message: "Câu hỏi mẫu và câu trả lời không được để trống." });
     }
     if (!ALLOWED_DM.includes(danh_muc)) {
       return res.status(400).json({ message: "Danh mục không hợp lệ." });
@@ -136,7 +133,10 @@ exports.createFaq = async (req, res) => {
       thu_tu: Number.isFinite(thu_tu) ? thu_tu : 0,
       hoat_dong: req.body.hoat_dong !== false,
     });
-    await logAudit("faq_tao", req.user._id, { faq_id: String(doc._id), cau_hoi_mau });
+    await logAudit("faq_tao", req.user._id, {
+      faq_id: String(doc._id),
+      cau_hoi_mau,
+    });
     res.status(201).json(doc);
   } catch (err) {
     console.error(err);
@@ -152,9 +152,13 @@ exports.updateFaq = async (req, res) => {
     const cau_hoi_mau = String(req.body.cau_hoi_mau ?? doc.cau_hoi_mau).trim();
     const cau_tra_loi = String(req.body.cau_tra_loi ?? doc.cau_tra_loi).trim();
     if (!cau_hoi_mau || !cau_tra_loi) {
-      return res.status(400).json({ message: "Câu hỏi mẫu và câu trả lời không được để trống." });
+      return res
+        .status(400)
+        .json({ message: "Câu hỏi mẫu và câu trả lời không được để trống." });
     }
-    const danh_muc = String(req.body.danh_muc ?? doc.danh_muc ?? "san_pham").trim();
+    const danh_muc = String(
+      req.body.danh_muc ?? doc.danh_muc ?? "san_pham",
+    ).trim();
     if (!ALLOWED_DM.includes(danh_muc)) {
       return res.status(400).json({ message: "Danh mục không hợp lệ." });
     }
@@ -172,9 +176,13 @@ exports.updateFaq = async (req, res) => {
     if (req.body.thu_tu != null && Number.isFinite(Number(req.body.thu_tu))) {
       doc.thu_tu = Number(req.body.thu_tu);
     }
-    if (typeof req.body.hoat_dong === "boolean") doc.hoat_dong = req.body.hoat_dong;
+    if (typeof req.body.hoat_dong === "boolean")
+      doc.hoat_dong = req.body.hoat_dong;
     await doc.save();
-    await logAudit("faq_sua", req.user._id, { faq_id: String(doc._id), cau_hoi_mau });
+    await logAudit("faq_sua", req.user._id, {
+      faq_id: String(doc._id),
+      cau_hoi_mau,
+    });
     res.json(doc);
   } catch (err) {
     console.error(err);
@@ -209,7 +217,11 @@ exports.listSessions = async (req, res) => {
   try {
     const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
     const rows = await ChatSession.find({
-      $or: [{ updatedAt: { $gte: since } }, { handoff: true }, { staff_takeover: true }],
+      $or: [
+        { updatedAt: { $gte: since } },
+        { handoff: true },
+        { staff_takeover: true },
+      ],
     })
       .sort({ updatedAt: -1 })
       .limit(100)
@@ -240,7 +252,9 @@ exports.listSessions = async (req, res) => {
           nguoi_dung_id: r.nguoi_dung_id,
           updatedAt: r.updatedAt,
           createdAt: r.createdAt,
-          last_message: r.messages?.length ? r.messages[r.messages.length - 1] : null,
+          last_message: r.messages?.length
+            ? r.messages[r.messages.length - 1]
+            : null,
           message_count: r.messages?.length || 0,
           needs_attention: Boolean(r.handoff && !r.staff_takeover),
           khach_ten,
@@ -288,8 +302,11 @@ exports.getSessionAdmin = async (req, res) => {
 /** POST /api/chat/admin/sessions/:token/takeover */
 exports.takeoverSession = async (req, res) => {
   try {
-    const session = await ChatSession.findOne({ session_token: req.params.token });
-    if (!session) return res.status(404).json({ message: "Không tìm thấy phiên." });
+    const session = await ChatSession.findOne({
+      session_token: req.params.token,
+    });
+    if (!session)
+      return res.status(404).json({ message: "Không tìm thấy phiên." });
     if (session.staff_takeover) {
       return res.status(400).json({ message: "Phiên đã được tiếp quản." });
     }
@@ -297,7 +314,9 @@ exports.takeoverSession = async (req, res) => {
     session.takeover_at = new Date();
     session.takeover_by = req.user._id;
     await session.save();
-    await logAudit("tiep_quan", req.user._id, { session_token: session.session_token });
+    await logAudit("tiep_quan", req.user._id, {
+      session_token: session.session_token,
+    });
     res.json({
       message: "Đã tiếp quản.",
       session_token: session.session_token,
@@ -312,10 +331,15 @@ exports.takeoverSession = async (req, res) => {
 /** POST /api/chat/admin/sessions/:token/end-support */
 exports.endSupport = async (req, res) => {
   try {
-    const session = await ChatSession.findOne({ session_token: req.params.token });
-    if (!session) return res.status(404).json({ message: "Không tìm thấy phiên." });
+    const session = await ChatSession.findOne({
+      session_token: req.params.token,
+    });
+    if (!session)
+      return res.status(404).json({ message: "Không tìm thấy phiên." });
     if (!session.staff_takeover) {
-      return res.status(400).json({ message: "Phiên chưa ở trạng thái nhân viên hỗ trợ." });
+      return res
+        .status(400)
+        .json({ message: "Phiên chưa ở trạng thái nhân viên hỗ trợ." });
     }
     session.staff_takeover = false;
     session.handoff = false;
@@ -328,7 +352,9 @@ exports.endSupport = async (req, res) => {
     });
     while (session.messages.length > 60) session.messages.shift();
     await session.save();
-    await logAudit("ket_thuc_ho_tro", req.user._id, { session_token: session.session_token });
+    await logAudit("ket_thuc_ho_tro", req.user._id, {
+      session_token: session.session_token,
+    });
     res.json({
       message: "Đã kết thúc hỗ trợ.",
       session_token: session.session_token,
@@ -350,12 +376,19 @@ exports.staffMessage = async (req, res) => {
       return res.status(400).json({ message: "Tin nhắn không được để trống." });
     }
     if (textRaw.length > MAX_STAFF_MSG) {
-      return res.status(400).json({ message: `Tối đa ${MAX_STAFF_MSG} ký tự.` });
+      return res
+        .status(400)
+        .json({ message: `Tối đa ${MAX_STAFF_MSG} ký tự.` });
     }
-    const session = await ChatSession.findOne({ session_token: req.params.token });
-    if (!session) return res.status(404).json({ message: "Không tìm thấy phiên." });
+    const session = await ChatSession.findOne({
+      session_token: req.params.token,
+    });
+    if (!session)
+      return res.status(404).json({ message: "Không tìm thấy phiên." });
     if (!session.staff_takeover) {
-      return res.status(400).json({ message: "Vui lòng Tiếp quản trước khi gửi tin." });
+      return res
+        .status(400)
+        .json({ message: "Vui lòng Tiếp quản trước khi gửi tin." });
     }
     session.messages.push({
       role: "staff",

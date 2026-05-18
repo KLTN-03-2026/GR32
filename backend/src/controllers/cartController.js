@@ -13,17 +13,28 @@ exports.addToCart = async (req, res) => {
 
     if (product.bien_the && product.bien_the.length > 0) {
       const variant = product.bien_the.find(
-        (v) => v.mau_sac === mau_sac && v.kich_co === kich_co
+        (v) => v.mau_sac === mau_sac && v.kich_co === kich_co,
       );
       if (!variant) {
-        return res.status(400).json({ message: "Phân loại sản phẩm không hợp lệ!" });
+        return res
+          .status(400)
+          .json({ message: "Phân loại sản phẩm không hợp lệ!" });
       }
       if (variant.so_luong < so_luong) {
-        return res.status(400).json({ message: `Chỉ còn ${variant.so_luong} sản phẩm trong kho!` });
+        return res
+          .status(400)
+          .json({ message: `Chỉ còn ${variant.so_luong} sản phẩm trong kho!` });
       }
     } else {
-      if (product.so_luong_ton !== undefined && product.so_luong_ton < so_luong) {
-        return res.status(400).json({ message: `Chỉ còn ${product.so_luong_ton} sản phẩm trong kho!` });
+      if (
+        product.so_luong_ton !== undefined &&
+        product.so_luong_ton < so_luong
+      ) {
+        return res
+          .status(400)
+          .json({
+            message: `Chỉ còn ${product.so_luong_ton} sản phẩm trong kho!`,
+          });
       }
     }
 
@@ -37,8 +48,18 @@ exports.addToCart = async (req, res) => {
       (item) =>
         item.san_pham_id.toString() === san_pham_id &&
         item.mau_sac === (mau_sac || "") &&
-        item.kich_co === (kich_co || "")
+        item.kich_co === (kich_co || ""),
     );
+
+    const itemPrice =
+      product.bien_the && product.bien_the.length > 0 && mau_sac && kich_co
+        ? product.bien_the.find(
+            (v) => v.mau_sac === mau_sac && v.kich_co === kich_co,
+          )?.gia_ban ||
+          product.bien_the.find(
+            (v) => v.mau_sac === mau_sac && v.kich_co === kich_co,
+          )?.gia_goc
+        : product.gia_hien_tai || product.gia_goc;
 
     if (existingIndex > -1) {
       cart.san_pham[existingIndex].so_luong += so_luong;
@@ -46,8 +67,11 @@ exports.addToCart = async (req, res) => {
       cart.san_pham.push({
         san_pham_id,
         ten_san_pham: product.ten_san_pham,
-        hinh_anh: product.hinh_anh || (product.danh_sach_anh && product.danh_sach_anh[0]) || "",
-        gia: product.gia_hien_tai || product.gia_goc,
+        hinh_anh:
+          product.hinh_anh ||
+          (product.danh_sach_anh && product.danh_sach_anh[0]) ||
+          "",
+        gia: itemPrice,
         mau_sac: mau_sac || "",
         kich_co: kich_co || "",
         so_luong,
@@ -56,7 +80,10 @@ exports.addToCart = async (req, res) => {
 
     await cart.save();
 
-    const totalItems = cart.san_pham.reduce((sum, item) => sum + item.so_luong, 0);
+    const totalItems = cart.san_pham.reduce(
+      (sum, item) => sum + item.so_luong,
+      0,
+    );
 
     res.status(200).json({
       message: `Thêm vào giỏ hàng thành công!`,
@@ -79,7 +106,10 @@ exports.getCart = async (req, res) => {
       return res.status(200).json({ san_pham: [], totalItems: 0 });
     }
 
-    const totalItems = cart.san_pham.reduce((sum, item) => sum + item.so_luong, 0);
+    const totalItems = cart.san_pham.reduce(
+      (sum, item) => sum + item.so_luong,
+      0,
+    );
     res.status(200).json({ san_pham: cart.san_pham, totalItems });
   } catch (err) {
     res.status(500).json({ message: "Lỗi server!" });
@@ -110,13 +140,20 @@ exports.updateCartItem = async (req, res) => {
     if (!cart) return res.status(404).json({ message: "Giỏ hàng trống!" });
 
     const item = cart.san_pham.id(itemId);
-    if (!item) return res.status(404).json({ message: "Sản phẩm không có trong giỏ!" });
+    if (!item)
+      return res.status(404).json({ message: "Sản phẩm không có trong giỏ!" });
 
     item.so_luong = so_luong;
     await cart.save();
 
     const totalItems = cart.san_pham.reduce((sum, i) => sum + i.so_luong, 0);
-    res.status(200).json({ message: "Cập nhật thành công!", totalItems, cart: cart.san_pham });
+    res
+      .status(200)
+      .json({
+        message: "Cập nhật thành công!",
+        totalItems,
+        cart: cart.san_pham,
+      });
   } catch (err) {
     res.status(500).json({ message: "Lỗi server!" });
   }
@@ -129,11 +166,19 @@ exports.removeCartItem = async (req, res) => {
     const cart = await Cart.findOne({ nguoi_dung_id: req.user._id });
     if (!cart) return res.status(404).json({ message: "Giỏ hàng trống!" });
 
-    cart.san_pham = cart.san_pham.filter((item) => item._id.toString() !== itemId);
+    cart.san_pham = cart.san_pham.filter(
+      (item) => item._id.toString() !== itemId,
+    );
     await cart.save();
 
     const totalItems = cart.san_pham.reduce((sum, i) => sum + i.so_luong, 0);
-    res.status(200).json({ message: "Đã xóa khỏi giỏ hàng!", totalItems, cart: cart.san_pham });
+    res
+      .status(200)
+      .json({
+        message: "Đã xóa khỏi giỏ hàng!",
+        totalItems,
+        cart: cart.san_pham,
+      });
   } catch (err) {
     res.status(500).json({ message: "Lỗi server!" });
   }
